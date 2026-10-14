@@ -1,88 +1,159 @@
 #Expense Tracker
 
-transactions = []
-def add_income():
-    amount = float(input("Введіть суму доходу: "))
-    category = input("Введіть категорію: ")
+class Transaction:
+    def __init__(self, amount, category, date, description):
+        self.amount = amount
+        self.category = category
+        self.date = date
+        self.description = description
 
-    transaction = {
-        "amount": amount,
-        "type": "income",
-        "category": category
-    }
 
-    transactions.append(transaction)
-    print("Дохід додано!")
+    def display_transaction(self):
+            print(f"Cума: {self.amount}")
+            print(f"Категорія: {self.category}")
+            print(f"Дата: {self.date}")
+            print(f"Опис: {self.description}")
 
-def add_expense():
-    """Додає до списку транзакцій витрату."""
-    amount = float(input("Введіть суму витрати: "))
-    category = input("Введіть категорію: ")
+    def display_income(self):
+        print(f"Змінна: {self.variable}")
 
-    transaction = {
-        "amount": amount,
-        "type": "expense",
-        "category": category
-    }
 
-    transactions.append(transaction)
-    print("Витрата додана!")
+    def display_expense(self):
+        print(f"Регулярна витрата: {self.is_recurring}")
 
-def show_transactions():
-    """Виводить список усіх транзакцій."""
-    if not transactions:
-        print("  Транзакцій немає.\n")
-        return
-    print("  Список транзакцій:")
-    for i, transaction in enumerate(transactions, start=1):
-        print(f"    {i}. {transaction['type'].capitalize()}: {transaction['amount']}")
+
+    def calculate_balance(self):
+        if isinstance(self, Income):
+            return self.amount
+        elif isinstance(self, Expense):
+            return -self.amount
+        else:
+            return 0
+
+
+class Income(Transaction):
+    def __init__(self, amount, category, date, description, variable):
+        super().__init__(amount, category, date, description)
+        self.variable = variable
+
+
+    def display_transaction(self):
+        super().display_transaction()
+        print(f"Змінна: {self.variable}")
+
+class Expense(Transaction):
+    def __init__(self, amount, category, date, description, is_recurring):
+        super().__init__(amount, category, date, description)
+        self.is_recurring = is_recurring
+
+    def display_transaction(self):
+        super().display_transaction()
+        print(f"Регулярна витрата: {self.is_recurring}")
+
+   
+class Budget:
+    def __init__(self, category, monthly_limit):
+        self.category = category
+        self.monthly_limit = monthly_limit
+
+    def display_budget(self):
+        print(f"Категорія: {self.category}")
+        print(f"Місячний ліміт: {self.monthly_limit} грн")
+
+    def calculate_total_expenses(self, transactions):
+        return sum(
+            transaction.amount
+            for transaction in transactions
+            if isinstance(transaction, Expense)
+            and transaction.category == self.category
+        )
+
+    def check_budget(self, transactions):
+        total_expenses = self.calculate_total_expenses(transactions)
+
+        if total_expenses > self.monthly_limit:
+            over_limit = total_expenses - self.monthly_limit
+            print(f"Перевищено ліміт для категорії {self.category}!")
+            print(f"Сума витрат: {total_expenses} грн")
+            print(f"Перевищення: {over_limit} грн")
+        else:
+            remaining = self.monthly_limit - total_expenses
+            print(f"Витрати в межах бюджету для категорії {self.category}.")
+            print(f"Залишок бюджету: {remaining} грн")
+
+    def monthly_report(self, transactions):
+        total_expenses = self.calculate_total_expenses(transactions)
+        remaining = self.monthly_limit - total_expenses
+
+        print(f"Звіт по категорії {self.category}:")
+        print(f"Місячний ліміт: {self.monthly_limit} грн")
+        print(f"Витрати за місяць: {total_expenses} грн")
+
+        if remaining < 0:
+            print(f"Перевищення бюджету: {-remaining} грн")
+        else:
+            print(f"Залишок бюджету: {remaining} грн")
+
+
+transaction = Income(10000, "Зарплата", "2023-06-01", "Місячна зарплата", True)
+
+transaction.display_transaction()
+
+print("---")
+
+transaction1 = Expense(8000, "Харчування", "2023-06-02", "Молочні продукти", True)
+
+transaction2 = Expense(3000, "Розваги", "2023-06-03", "Кінотеатр", True)
+
+transaction.display_transaction()
+
+print("---")
+
+transaction1.display_transaction()
+
+print(f"Баланс: {transaction1.calculate_balance()}")
+print(f"Баланс: {transaction.calculate_balance()}")
+print(f"Баланс: {transaction2.calculate_balance()}")
+
+budgets = [
+    Budget("Продукти", 2000),
+    Budget("Розваги", 1500),
+    Budget("Транспорт", 1000),
+]
+
+for budget in budgets:
+    budget.display_budget()
+
+transactions = [
+    Expense(8000, "Продукти", "2023-06-02", "Молочні продукти", True),
+    Expense(500, "Розваги", "2023-06-03", "Кіно", True),
+    Expense(300, "Транспорт", "2023-06-04", "Автобус", False),
+]
+
+print("---")
+
+
+transactions.append(
+    Expense(600, "Продукти", "2023-06-05", "Овочі", False)
+)
+
+transactions.append(
+    Expense(1100, "Розваги", "2023-10-05", "Танці", True)
+)
+
+for budget in budgets:
+    budget.check_budget([transaction1])
+    budget.check_budget([transaction])
+    budget.check_budget([transaction2])
+
+for budget in budgets:
+    budget.display_budget()
+    budget.check_budget(transactions)
+    print("---")
+
+    budget.monthly_report(transactions)
     print()
 
-def delete_transaction():
-    """Видаляє транзакцію за її номером у списку."""
-    if not transactions:
-        print("  Транзакцій немає для видалення.\n")
-        return
-    show_transactions()
-    while True:
-        try:
-            index = int(input("Введіть номер транзакції для видалення: ")) - 1
-            if 0 <= index < len(transactions):
-                removed = transactions.pop(index)
-                print(f"Транзакція {removed['type']} на суму {removed['amount']} видалена.\n")
-                return
-            else:
-                print(f"Помилка: введено некоректний номер. Спробуйте ще раз.\n")
-        except ValueError:
-            print("Помилка: введено не число. Спробуйте ще раз.\n")
 
-def main():
-    while True:
-        print("\nТрекер витрат")
-        print("1. Додати дохід")
-        print("2. Додати витрату")
-        print("3. Показати транзакції")
-        print("4. Видалити транзакцію")
-        print("5. Вийти")
-
-        choice = input("Виберіть варіант: ")
-
-        if choice == "1":
-            add_income()
-        elif choice == "2":
-            add_expense()
-        elif choice == "3":
-            show_transactions()
-        elif choice == "4":
-            delete_transaction()
-        elif choice == "5":
-            print("До побачення!")
-            break
-        else:
-            print("Помилка операції: введено некоректний вибір. Спробуйте ще раз.\n")
-
-
-if __name__ == "__main__":
-    main()
 
 
