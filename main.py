@@ -1,40 +1,34 @@
 #Expense Tracker
 
-class Transaction:
+from abc import ABC, abstractmethod
+
+class Transaction(ABC):
     def __init__(self, amount, category, date, description):
         self.amount = amount
         self.category = category
         self.date = date
         self.description = description
 
-
-    def display_transaction(self):
-            print(f"Cума: {self.amount}")
-            print(f"Категорія: {self.category}")
-            print(f"Дата: {self.date}")
-            print(f"Опис: {self.description}")
-
-    def display_income(self):
-        print(f"Змінна: {self.variable}")
-
-
-    def display_expense(self):
-        print(f"Регулярна витрата: {self.is_recurring}")
-
-
+    @abstractmethod
     def calculate_balance(self):
-        if isinstance(self, Income):
-            return self.amount
-        elif isinstance(self, Expense):
-            return -self.amount
-        else:
-            return 0
+        pass
 
+    @abstractmethod
+    def display_transaction(self):
+        pass
 
 class Income(Transaction):
     def __init__(self, amount, category, date, description, variable):
         super().__init__(amount, category, date, description)
         self.variable = variable
+
+    @property
+    def calculate_balance(self):
+        return self.amount
+
+    def display_transaction(self):
+        super().display_transaction()
+        print(f"Змінна: {self.variable}")
 
 
     def display_transaction(self):
@@ -46,11 +40,16 @@ class Expense(Transaction):
         super().__init__(amount, category, date, description)
         self.is_recurring = is_recurring
 
+    @property
+    def calculate_balance(self):
+        return -self.amount
+
     def display_transaction(self):
         super().display_transaction()
         print(f"Регулярна витрата: {self.is_recurring}")
 
-   
+
+
 class Budget:
     def __init__(self, category, monthly_limit):
         self.category = category
@@ -95,25 +94,32 @@ class Budget:
             print(f"Залишок бюджету: {remaining} грн")
 
 
-transaction = Income(10000, "Зарплата", "2023-06-01", "Місячна зарплата", True)
+income = Income(
+    10000,
+    "Зарплата",
+    "2026-10-15",
+    "Премія",
+    True
+)
+expense = Expense(2000, "Продукти", "2026-10-15", "Покупки", False)
 
-transaction.display_transaction()
+print(income.calculate_balance)   # 10000
+print(expense.calculate_balance)  # -2000
+
+income.display_transaction()
+expense.display_transaction()
 
 print("---")
 
-transaction1 = Expense(8000, "Харчування", "2023-06-02", "Молочні продукти", True)
+expense2 = Expense(3000, "Розваги", "2023-06-03", "Кінотеатр", True)
 
-transaction2 = Expense(3000, "Розваги", "2023-06-03", "Кінотеатр", True)
-
-transaction.display_transaction()
 
 print("---")
 
-transaction1.display_transaction()
+income.display_transaction()
 
-print(f"Баланс: {transaction1.calculate_balance()}")
-print(f"Баланс: {transaction.calculate_balance()}")
-print(f"Баланс: {transaction2.calculate_balance()}")
+print(f"Баланс доходу: {income.calculate_balance}")
+print(f"Баланс витрат: {expense.calculate_balance}")
 
 budgets = [
     Budget("Продукти", 2000),
@@ -121,8 +127,6 @@ budgets = [
     Budget("Транспорт", 1000),
 ]
 
-for budget in budgets:
-    budget.display_budget()
 
 transactions = [
     Expense(8000, "Продукти", "2023-06-02", "Молочні продукти", True),
@@ -141,19 +145,13 @@ transactions.append(
     Expense(1100, "Розваги", "2023-10-05", "Танці", True)
 )
 
-for budget in budgets:
-    budget.check_budget([transaction1])
-    budget.check_budget([transaction])
-    budget.check_budget([transaction2])
 
 for budget in budgets:
     budget.display_budget()
     budget.check_budget(transactions)
-    print("---")
-
     budget.monthly_report(transactions)
     print()
-
+    print("---")
 
 
 
