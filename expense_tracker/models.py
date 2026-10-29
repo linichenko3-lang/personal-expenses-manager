@@ -116,6 +116,30 @@ class Income(Transaction):
         print(f"Змінний дохід: {self.variable}")
 
 
+    def to_dict(self):
+        """Перетворює об'єкт Income на словник."""
+        return {
+            "type": "income",
+            "amount": self.amount,
+            "category": self.category,
+            "date": self.date,
+            "description": self.description,
+            "variable": self.variable,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        """Створює об'єкт Income зі словника."""
+        return cls(
+            amount=data["amount"],
+            category=data["category"],
+            date=data["date"],
+            description=data["description"],
+            variable=data["variable"],
+        )
+
+
+
 class Expense(Transaction):
     """Клас для витрат."""
 
@@ -157,6 +181,30 @@ class Expense(Transaction):
     def display_transaction(self):
         super().display_transaction()
         print(f"Регулярна витрата: {self.is_recurring}")
+
+
+    def to_dict(self):
+        """Перетворює об'єкт Expense на словник."""
+        return {
+            "type": "expense",
+            "amount": self.amount,
+            "category": self.category,
+            "date": self.date,
+            "description": self.description,
+            "is_recurring": self.is_recurring,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        """Створює об'єкт Expense зі словника."""
+        return cls(
+            amount=data["amount"],
+            category=data["category"],
+            date=data["date"],
+            description=data["description"],
+            is_recurring=data["is_recurring"],
+        )
+
 
 
 class Budget:
@@ -225,3 +273,20 @@ class Budget:
             print(f"Перевищення бюджету: {-remaining} грн")
         else:
             print(f"Залишок бюджету: {remaining} грн")
+
+
+    def to_dict(self):
+        """Перетворює об'єкт Budget на словник."""
+        return {
+            "category": self.category,
+            "monthly_limit": self.monthly_limit,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        """Створює об'єкт Budget зі словника."""
+        return cls(
+            category=data["category"],
+            monthly_limit=data["monthly_limit"],
+        )
+

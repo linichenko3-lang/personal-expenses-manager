@@ -1,6 +1,13 @@
+from expense_tracker.storage import (
+    load_transactions,
+    save_transactions,
+    load_budgets,
+    save_budgets,
+)
+
 from datetime import date
 
-from expense_tracker.models import Transaction, Income, Expense
+from expense_tracker.models import Transaction, Income, Expense, Budget
 
 from expense_tracker.exceptions import TransactionNotFoundError
 
@@ -8,12 +15,27 @@ class ExpenseTracker:
     """Керує транзакціями та розрахунками особистих фінансів."""
 
     def __init__(self):
-        self._transactions = []
+        self._transactions = load_transactions()
+        self._budgets = load_budgets()
 
     @property
     def transactions(self):
         """Повертає копію списку транзакцій."""
         return self._transactions.copy()
+
+    @property
+    def budgets(self):
+        """Повертає копію списку бюджетів."""
+        return self._budgets.copy()
+
+    def add_budget(self, budget):
+        """Додає бюджет і зберігає його у JSON."""
+        if not isinstance(budget, Budget):
+            raise TypeError("Можна додавати лише об'єкти Budget.")
+
+        self._budgets.append(budget)
+        save_budgets(self._budgets)
+
 
     def add_transaction(self, transaction):
         """Додає транзакцію до списку."""
@@ -21,8 +43,24 @@ class ExpenseTracker:
             raise TypeError(
                 "Можна додавати лише об'єкти Transaction, Income або Expense."
             )
-
+        
         self._transactions.append(transaction)
+        save_transactions(self._transactions)
+
+
+    def delete_budget(self, category):
+        """Видаляє бюджет за категорією та зберігає зміни."""
+        for budget in self._budgets:
+            if budget.category == category:
+                self._budgets.remove(budget)
+                save_budgets(self._budgets)
+                return
+
+        raise ValueError(
+            f"Бюджет для категорії '{category}' не знайдено."
+        )
+
+
 
     def delete_transaction(self, transaction):
         """Видаляє конкретну транзакцію."""
@@ -31,6 +69,7 @@ class ExpenseTracker:
                 "Такої транзакції немає у списку."
             )
 
+        self._transactions.remove(transaction)
         self._transactions.remove(transaction)
 
     def calculate_balance(self):

@@ -1,0 +1,26 @@
+[
+    {
+        "type": "income",
+        "amount": 11000.0,
+        "category": "Зарплата",
+        "date": "2029-10-26",
+        "description": "Жовтень",
+        "variable": true
+    },
+    {
+        "type": "income",
+        "amount": 20000.0,
+        "category": "Інше",
+        "date": "2026-10-25",
+        "description": "Чоловік дав гроші",
+        "variable": true
+    },
+    {
+        "type": "income",
+        "amount": 2000.0,
+        "category": "Інше",
+        "date": "2026-10-05",
+        "description": "Чоловік зарплату",
+        "variable": true
+    }
+]

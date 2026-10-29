@@ -1,4 +1,4 @@
-from expense_tracker.models import Income, Expense
+from expense_tracker.models import Income, Expense, Budget
 from expense_tracker.tracker import ExpenseTracker
 from expense_tracker.exceptions import (
     ExpenseTrackerError,
@@ -21,6 +21,9 @@ class ExpenseTrackerCLI:
         print("4. Видалити транзакцію")
         print("5. Переглянути загальний баланс")
         print("6. Місячний звіт")
+        print("7. Додати бюджет")
+        print("8. Переглянути бюджети")
+        print("9. Видалити бюджет")
         print("0. Вийти")
 
     def add_transaction(self, transaction_type):
@@ -156,6 +159,72 @@ class ExpenseTrackerCLI:
         except TypeError as error:
             print(f"Помилка типу даних: {error}")
 
+    def add_budget(self):
+        """Додає бюджет і зберігає його."""
+        try:
+            category = self._read_category(ExpenseCategory)
+
+            monthly_limit = float(
+                input("Введіть місячний ліміт бюджету: ")
+            )
+
+            budget = Budget(category, monthly_limit)
+
+            self.tracker.add_budget(budget)
+
+            print("Бюджет успішно додано!")
+
+        except ValueError as error:
+            print(f"Помилка введення: {error}")
+        except TypeError as error:
+            print(f"Помилка типу даних: {error}")
+        except ExpenseTrackerError as error:
+            print(f"Помилка: {error}")
+
+    def show_budgets(self):
+        """Показує всі збережені бюджети."""
+        budgets = self.tracker.budgets
+
+        if not budgets:
+            print("Список бюджетів порожній.")
+            return
+
+        print("\n===== МОЇ БЮДЖЕТИ =====")
+
+        for index, budget in enumerate(budgets, start=1):
+            print(
+                f"{index}. Категорія: {budget.category} | "
+                f"Місячний ліміт: {budget.monthly_limit:.2f} грн"
+            )
+
+    def delete_budget(self):
+        """Видаляє бюджет за вибраним номером."""
+        budgets = self.tracker.budgets
+
+        if not budgets:
+            print("Список бюджетів порожній.")
+            return
+
+        self.show_budgets()
+
+        try:
+            number = int(
+                input("\nВведіть номер бюджету для видалення: ")
+            )
+
+            if not 1 <= number <= len(budgets):
+                print("Бюджету з таким номером немає.")
+                return
+
+            category = budgets[number - 1].category
+
+            self.tracker.delete_budget(category)
+
+            print("Бюджет успішно видалено!")
+
+        except ValueError as error:
+            print(f"Помилка введення: {error}")
+
     def run(self):
         while True:
             self.show_menu()
@@ -175,6 +244,15 @@ class ExpenseTrackerCLI:
                 self.show_balance()
             elif choice == "6":
                 self.show_monthly_report()
+            elif choice == "7":
+                self.add_budget()
+
+            elif choice == "8":
+                self.show_budgets()
+
+            elif choice == "9":
+                self.delete_budget()
+
             elif choice == "0":
                 print("Роботу Expense Tracker завершено.")
                 break
