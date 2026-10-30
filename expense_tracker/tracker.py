@@ -1,13 +1,20 @@
-from expense_tracker.storage import (
-    load_transactions,
-    save_transactions,
-    load_budgets,
-    save_budgets,
+from datetime import date
+from expense_tracker.database import init_db
+from expense_tracker.models import (
+    Transaction,
+    Income,
+    Expense,
+    Budget,
+    create_user,
+    get_user_by_email,
+    get_all_transactions,
+    get_all_budgets,
+    add_transaction as add_transaction_to_db,
+    delete_transaction as delete_transaction_from_db,
+    set_budget as set_budget_in_db,
+    delete_budget as delete_budget_from_db,
 )
 
-from datetime import date
-
-from expense_tracker.models import Transaction, Income, Expense, Budget
 
 from expense_tracker.exceptions import TransactionNotFoundError
 
@@ -15,8 +22,71 @@ class ExpenseTracker:
     """Керує транзакціями та розрахунками особистих фінансів."""
 
     def __init__(self):
-        self._transactions = load_transactions()
-        self._budgets = load_budgets()
+        init_db()
+
+        username = "Expense Tracker User"
+        email = "app@example.com"
+
+        user = get_user_by_email(email)
+
+        if user is None:
+            self.user_id = create_user(username, email)
+        else:
+            self.user_id = user["id"]
+
+        self._transactions = self._load_transactions_from_db()
+        self._budgets = self._load_budgets_from_db()
+
+    def _load_transactions_from_db(self):
+        """Завантажує транзакції з SQLite та створює об'єкти."""
+
+        transactions = get_all_transactions(self.user_id)
+
+        result = []
+
+        for item in transactions:
+
+            if item["transaction_type"] == "income":
+                transaction_data = item.copy()
+                transaction_data["variable"] = bool(
+                    item["variable"]
+                )
+
+                transaction = Income.from_dict(transaction_data)
+
+            elif item["transaction_type"] == "expense":
+                transaction_data = item.copy()
+                transaction_data["is_recurring"] = bool(
+                    item["is_recurring"]
+                )
+
+                transaction = Expense.from_dict(transaction_data)
+
+            else:
+                raise ValueError(
+                    f"Невідомий тип транзакції: "
+                    f"{item['transaction_type']}"
+                )
+
+            transaction._db_id = item["id"]
+
+            result.append(transaction)
+
+        return result
+    
+    def _load_budgets_from_db(self):
+        """Завантажує бюджети з SQLite та створює об'єкти Budget."""
+
+        budgets = get_all_budgets(self.user_id)
+
+        result = []
+
+        for item in budgets:
+            budget = Budget.from_dict(item)
+            budget._db_id = item["id"]
+            result.append(budget)
+
+        return result
 
     @property
     def transactions(self):
@@ -29,31 +99,80 @@ class ExpenseTracker:
         return self._budgets.copy()
 
     def add_budget(self, budget):
-        """Додає бюджет і зберігає його у JSON."""
+        """Додає бюджет до SQLite."""
+
         if not isinstance(budget, Budget):
             raise TypeError("Можна додавати лише об'єкти Budget.")
 
+        budget_id = set_budget_in_db(
+            user_id=self.user_id,
+            category=budget.category,
+            monthly_limit=budget.monthly_limit,
+        )
+
+        budget._db_id = budget_id
+
         self._budgets.append(budget)
-        save_budgets(self._budgets)
 
 
     def add_transaction(self, transaction):
-        """Додає транзакцію до списку."""
-        if not isinstance(transaction, Transaction):
+        """Додає транзакцію до SQLite."""
+
+        if isinstance(transaction, Income):
+            transaction_type = "income"
+            variable = transaction.variable
+            is_recurring = False
+
+        elif isinstance(transaction, Expense):
+            transaction_type = "expense"
+            variable = False
+            is_recurring = transaction.is_recurring
+
+        else:
             raise TypeError(
-                "Можна додавати лише об'єкти Transaction, Income або Expense."
+                "Можна додавати лише об'єкти Income або Expense."
             )
-        
+
+        transaction_id = add_transaction_to_db(
+            user_id=self.user_id,
+            amount=transaction.amount,
+            transaction_type=transaction_type,
+            category=transaction.category,
+            description=transaction.description,
+            variable=variable,
+            is_recurring=is_recurring,
+            transaction_date=transaction.date,
+        )
+
+        transaction._db_id = transaction_id
+
         self._transactions.append(transaction)
-        save_transactions(self._transactions)
 
 
     def delete_budget(self, category):
-        """Видаляє бюджет за категорією та зберігає зміни."""
+        """Видаляє бюджет із SQLite та списку об'єктів."""
+
         for budget in self._budgets:
             if budget.category == category:
+
+                budget_id = getattr(budget, "_db_id", None)
+
+                if budget_id is None:
+                    raise ValueError(
+                        "Бюджет не має ID у базі даних."
+                    )
+
+                deleted = delete_budget_from_db(
+                    self.user_id,
+                    budget_id,
+                )
+
+                if not deleted:
+                    raise ValueError(
+                        "Бюджет не знайдено в базі даних."
+                    )
+
                 self._budgets.remove(budget)
-                save_budgets(self._budgets)
                 return
 
         raise ValueError(
@@ -63,13 +182,27 @@ class ExpenseTracker:
 
 
     def delete_transaction(self, transaction):
-        """Видаляє конкретну транзакцію."""
+        """Видаляє транзакцію з SQLite та списку об'єктів."""
+
         if transaction not in self._transactions:
             raise TransactionNotFoundError(
                 "Такої транзакції немає у списку."
             )
 
-        self._transactions.remove(transaction)
+        transaction_id = getattr(transaction, "_db_id", None)
+
+        if transaction_id is None:
+            raise TransactionNotFoundError(
+                "Транзакція не має ID у базі даних."
+            )
+
+        deleted = delete_transaction_from_db(transaction_id)
+
+        if not deleted:
+            raise TransactionNotFoundError(
+                "Транзакцію не знайдено в базі даних."
+            )
+
         self._transactions.remove(transaction)
 
     def calculate_balance(self):

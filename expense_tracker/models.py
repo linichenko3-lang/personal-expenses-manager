@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from datetime import date
 from expense_tracker.exceptions import InvalidAmountError
 from expense_tracker.constants import IncomeCategory, ExpenseCategory
+from expense_tracker.database import get_connection
+
 
 class Transaction(ABC):
     """Абстрактний базовий клас для доходів і витрат."""
@@ -290,3 +292,349 @@ class Budget:
             monthly_limit=data["monthly_limit"],
         )
 
+def create_user(username, email):
+    """Створює користувача та повертає його ID."""
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO users (username, email)
+            VALUES (?, ?)
+            """,
+            (username, email),
+        )
+
+        connection.commit()
+
+        return cursor.lastrowid
+
+    finally:
+        connection.close()
+
+def get_user_by_email(email):
+    """Знаходить користувача за електронною адресою."""
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT id, username, email
+            FROM users
+            WHERE email = ?
+            """,
+            (email,),
+        )
+
+        user = cursor.fetchone()
+
+        return dict(user) if user else None
+
+    finally:
+        connection.close()
+
+def add_transaction(
+    user_id,
+    amount,
+    transaction_type,
+    category,
+    description,
+    variable=False,
+    is_recurring=False,
+    transaction_date=None,
+):
+    """Додає транзакцію користувача та повертає її ID."""
+
+    if amount <= 0:
+        raise ValueError("Сума транзакції має бути більшою за нуль.")
+
+    if transaction_type not in ("income", "expense"):
+        raise ValueError(
+            "Тип транзакції повинен бути 'income' або 'expense'."
+        )
+
+    if transaction_date is None:
+        transaction_date = date.today().isoformat()
+    else:
+        try:
+            date.fromisoformat(transaction_date)
+        except (ValueError, TypeError):
+            raise ValueError("Некоректна дата. Використай YYYY-MM-DD.")
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO transactions (
+                amount,
+                transaction_type,
+                category,
+                date,
+                description,
+                variable,
+                is_recurring,
+                user_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                amount,
+                transaction_type,
+                category,
+                transaction_date,
+                description,
+                int(variable),
+                int(is_recurring),
+                user_id,
+            ),
+        )
+
+        connection.commit()
+
+        return cursor.lastrowid
+
+    finally:
+        connection.close()
+
+def get_all_transactions(user_id):
+    """Повертає всі транзакції конкретного користувача."""
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT
+                id,
+                amount,
+                transaction_type,
+                category,
+                date,
+                description,
+                variable,
+                is_recurring
+            FROM transactions
+            WHERE user_id = ?
+            ORDER BY date, id
+            """,
+            (user_id,),
+        )
+
+        transactions = cursor.fetchall()
+
+        return [dict(transaction) for transaction in transactions]
+
+    finally:
+        connection.close()
+
+def get_balance(user_id):
+    """Обчислює баланс конкретного користувача."""
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN transaction_type = 'income' THEN amount
+                            WHEN transaction_type = 'expense' THEN -amount
+                        END
+                    ),
+                    0
+                ) AS balance
+            FROM transactions
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        )
+
+        result = cursor.fetchone()
+
+        return float(result["balance"])
+
+    finally:
+        connection.close()
+
+def get_expenses_by_category(user_id):
+    """Повертає загальні витрати користувача за категоріями."""
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT
+                category,
+                SUM(amount) AS total_expenses
+            FROM transactions
+            WHERE user_id = ?
+                AND transaction_type = 'expense'
+            GROUP BY category
+            ORDER BY category
+            """,
+            (user_id,),
+        )
+
+        expenses = cursor.fetchall()
+
+        return [dict(expense) for expense in expenses]
+
+    finally:
+        connection.close()
+
+def set_budget(user_id, category, monthly_limit):
+    """Створює бюджет користувача та повертає його ID."""
+
+    if monthly_limit <= 0:
+        raise ValueError("Місячний ліміт має бути більшим за нуль.")
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO budgets (
+                category,
+                monthly_limit,
+                user_id
+            )
+            VALUES (?, ?, ?)
+            """,
+            (category, monthly_limit, user_id),
+        )
+
+        connection.commit()
+
+        return cursor.lastrowid
+
+    finally:
+        connection.close()
+
+def delete_budget(user_id, budget_id):
+    """Видаляє бюджет користувача за ID."""
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            DELETE FROM budgets
+            WHERE id = ? AND user_id = ?
+            """,
+            (budget_id, user_id),
+        )
+
+        connection.commit()
+
+        return cursor.rowcount > 0
+
+    finally:
+        connection.close()
+
+def get_all_budgets(user_id):
+    """Повертає всі бюджети конкретного користувача."""
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT
+                id,
+                category,
+                monthly_limit
+            FROM budgets
+            WHERE user_id = ?
+            ORDER BY category
+            """,
+            (user_id,),
+        )
+
+        budgets = cursor.fetchall()
+
+        return [dict(budget) for budget in budgets]
+
+    finally:
+        connection.close()
+
+
+def delete_transaction(transaction_id):
+    """Видаляє транзакцію за ID та повертає результат."""
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            DELETE FROM transactions
+            WHERE id = ?
+            """,
+            (transaction_id,),
+        )
+
+        connection.commit()
+
+        return cursor.rowcount > 0
+
+    finally:
+        connection.close()
+
+def check_budget_status(user_id):
+    """Перевіряє витрати користувача відносно місячних бюджетів."""
+
+    current_month = date.today().strftime("%Y-%m")
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT
+                budgets.category,
+                budgets.monthly_limit,
+                COALESCE(SUM(transactions.amount), 0) AS total_expenses
+            FROM budgets
+
+            LEFT JOIN transactions
+                ON budgets.user_id = transactions.user_id
+                AND budgets.category = transactions.category
+                AND transactions.transaction_type = 'expense'
+                AND strftime('%Y-%m', transactions.date) = ?
+
+            WHERE budgets.user_id = ?
+
+            GROUP BY
+                budgets.id,
+                budgets.category,
+                budgets.monthly_limit
+
+            ORDER BY budgets.category
+            """,
+            (current_month, user_id),
+        )
+
+        rows = cursor.fetchall()
+
+        result = []
+
+        for row in rows:
+            total_expenses = float(row["total_expenses"])
+            monthly_limit = float(row["monthly_limit"])
+
+            result.append({
+                "category": row["category"],
+                "monthly_limit": monthly_limit,
+                "total_expenses": total_expenses,
+                "exceeded": total_expenses > monthly_limit,
+            })
+
+        return result
+
+    finally:
+        connection.close()
