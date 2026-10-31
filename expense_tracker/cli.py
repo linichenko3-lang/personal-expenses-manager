@@ -42,34 +42,43 @@ class ExpenseTrackerCLI:
                 variable = self._read_boolean(
                     "Дохід змінний? (так/ні): "
                 )
-                transaction = Income(
-                    amount,
-                    category,
-                    transaction_date,
-                    description,
-                    variable,
+
+                transaction = self.tracker.add_income(
+                    amount=amount,
+                    category=category,
+                    description=description,
+                    transaction_date=transaction_date,
+                    variable=variable,
                 )
+
             else:
                 is_recurring = self._read_boolean(
                     "Регулярна витрата? (так/ні): "
-                )
-                transaction = Expense(
-                    amount,
-                    category,
-                    transaction_date,
-                    description,
-                    is_recurring,
+                )   
+
+                transaction = self.tracker.add_expense(
+                    amount=amount,
+                    category=category,
+                    description=description,
+                    transaction_date=transaction_date,
+                    is_recurring=is_recurring,
                 )
 
-            self.tracker.add_transaction(transaction)
+            if transaction is None:
+                print("Транзакцію не додано. Перевірте суму.")
+                return
+
             print("Транзакцію успішно додано!")
 
         except ValueError as error:
             print(f"Помилка введення: {error}")
+
         except TypeError as error:
             print(f"Помилка типу даних: {error}")
+
         except ExpenseTrackerError as error:
             print(f"Помилка: {error}")
+
 
 
     @staticmethod
@@ -126,7 +135,8 @@ class ExpenseTrackerCLI:
                     "Транзакції з таким номером немає."
                 )
 
-            self.tracker.delete_transaction(transactions[number - 1])
+            transaction = transactions[number - 1]
+            self.tracker.delete_transaction(transaction._db_id)
             print("Транзакцію успішно видалено!")
 
         except ValueError as error:

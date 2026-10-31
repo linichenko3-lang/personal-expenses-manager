@@ -14,6 +14,11 @@ from expense_tracker.models import (
     set_budget as set_budget_in_db,
     delete_budget as delete_budget_from_db,
 )
+from expense_tracker.decorators import (
+    log_transaction,
+    validate_amount,
+    currency_aware,
+)
 
 
 from expense_tracker.exceptions import TransactionNotFoundError
@@ -148,6 +153,64 @@ class ExpenseTracker:
 
         self._transactions.append(transaction)
 
+    
+    @validate_amount
+    @log_transaction
+    @currency_aware(base_currency="UAH")
+
+
+    def add_income(
+        self,
+        amount,
+        category,
+        description="",
+        transaction_date=None,
+        variable=False,
+    ):
+        """Додає дохід користувача."""
+
+        if transaction_date is None:
+            transaction_date = date.today().isoformat()
+
+        income = Income(
+            amount=amount,
+            category=category,
+            date=transaction_date,
+            description=description,
+            variable=variable,
+        )
+
+        self.add_transaction(income)
+
+        return income
+
+    @validate_amount
+    @log_transaction
+    @currency_aware(base_currency="UAH")
+    def add_expense(
+        self,
+        amount,
+        category,
+        description="",
+        transaction_date=None,
+        is_recurring=False,
+    ):
+        """Додає витрату користувача."""
+
+        if transaction_date is None:
+            transaction_date = date.today().isoformat()
+
+        expense = Expense(
+            amount=amount,
+            category=category,
+            date=transaction_date,
+            description=description,
+            is_recurring=is_recurring,
+        )
+
+        self.add_transaction(expense)
+
+        return expense
 
     def delete_budget(self, category):
         """Видаляє бюджет із SQLite та списку об'єктів."""
@@ -181,19 +244,22 @@ class ExpenseTracker:
 
 
 
-    def delete_transaction(self, transaction):
-        """Видаляє транзакцію з SQLite та списку об'єктів."""
+    @log_transaction
+    def delete_transaction(self, transaction_id):
+        """Видаляє транзакцію з SQLite за її ID."""
 
-        if transaction not in self._transactions:
+        transaction = next(
+            (
+                item
+                for item in self._transactions
+                if getattr(item, "_db_id", None) == transaction_id
+            ),
+            None,
+        )
+
+        if transaction is None:
             raise TransactionNotFoundError(
-                "Такої транзакції немає у списку."
-            )
-
-        transaction_id = getattr(transaction, "_db_id", None)
-
-        if transaction_id is None:
-            raise TransactionNotFoundError(
-                "Транзакція не має ID у базі даних."
+                "Такої транзакції немає."
             )
 
         deleted = delete_transaction_from_db(transaction_id)
@@ -204,7 +270,7 @@ class ExpenseTracker:
             )
 
         self._transactions.remove(transaction)
-
+        
     def calculate_balance(self):
         """Обчислює загальний баланс усіх транзакцій."""
         return sum(
