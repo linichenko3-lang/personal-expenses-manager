@@ -1,8 +1,30 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import date
+from enum import Enum
+
 from expense_tracker.exceptions import InvalidAmountError
 from expense_tracker.constants import IncomeCategory, ExpenseCategory
 from expense_tracker.database import get_connection
+
+class TransactionType(Enum):
+    """Тип фінансової транзакції."""
+
+    INCOME = "income"
+    EXPENSE = "expense"
+
+@dataclass
+class User:
+    username: str
+    email: str
+    currency: str = "UAH"
+
+    def display(self) -> str:
+        return (
+            f"Користувач: {self.username}, "
+            f"Email: {self.email}, "
+            f"Валюта: {self.currency}"
+        )
 
 
 class Transaction(ABC):
