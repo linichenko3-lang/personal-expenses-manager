@@ -1,0 +1,52 @@
+[
+    {
+        "id": 11,
+        "amount": 1000.0,
+        "transaction_type": "income",
+        "category": "Зарплата",
+        "date": "2026-10-30",
+        "description": "Тест SQLite",
+        "variable": 1,
+        "is_recurring": 0
+    },
+    {
+        "id": 12,
+        "amount": 1500.0,
+        "transaction_type": "income",
+        "category": "Премія",
+        "date": "2026-10-30",
+        "description": "жовтень",
+        "variable": 1,
+        "is_recurring": 0
+    },
+    {
+        "id": 13,
+        "amount": 560.0,
+        "transaction_type": "expense",
+        "category": "Їжа",
+        "date": "2026-10-30",
+        "description": "хліб, молоко, яйця, масло",
+        "variable": 0,
+        "is_recurring": 0
+    },
+    {
+        "id": 15,
+        "amount": 5000.0,
+        "transaction_type": "income",
+        "category": "Зарплата",
+        "date": "2026-11-01",
+        "description": "",
+        "variable": 0,
+        "is_recurring": 0
+    },
+    {
+        "id": 16,
+        "amount": 350.0,
+        "transaction_type": "expense",
+        "category": "Їжа",
+        "date": "2026-11-01",
+        "description": "Обід у кафе",
+        "variable": 0,
+        "is_recurring": 0
+    }
+]

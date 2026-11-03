@@ -1,0 +1,6 @@
+﻿id,amount,transaction_type,category,date,description,variable,is_recurring
+11,1000.0,income,Зарплата,2026-10-30,Тест SQLite,1,0
+12,1500.0,income,Премія,2026-10-30,жовтень,1,0
+13,560.0,expense,Їжа,2026-10-30,"хліб, молоко, яйця, масло",0,0
+15,5000.0,income,Зарплата,2026-11-01,,0,0
+16,350.0,expense,Їжа,2026-11-01,Обід у кафе,0,0

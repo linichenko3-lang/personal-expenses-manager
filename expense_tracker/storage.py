@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from expense_tracker.models import Income, Expense, Budget
+import csv
 
 
 # Шлях до папки data у корені проєкту
@@ -64,3 +65,60 @@ def load_budgets():
         data = json.load(file)
 
     return [Budget.from_dict(item) for item in data]
+
+
+def export_transactions(transactions, export_format, export_dir):
+    """Експортує транзакції у CSV або JSON."""
+
+    export_path = Path(export_dir)
+
+    # Створюємо папку, якщо її ще немає
+    if not export_path.is_absolute():
+        export_path = Path(__file__).resolve().parent.parent / export_path
+
+    export_path.mkdir(parents=True, exist_ok=True)
+
+    # Перевіряємо формат
+    if export_format not in ("csv", "json"):
+        raise ValueError("Підтримуються тільки CSV та JSON.")
+
+    file_path = export_path / f"transactions.{export_format}"
+
+    # Поля, які експортуємо
+    fieldnames = [
+        "id",
+        "amount",
+        "transaction_type",
+        "category",
+        "date",
+        "description",
+        "variable",
+        "is_recurring",
+    ]
+
+    if export_format == "csv":
+        with file_path.open(
+            "w",
+            encoding="utf-8-sig",
+            newline=""
+        ) as file:
+
+            writer = csv.DictWriter(
+                file,
+                fieldnames=fieldnames,
+                extrasaction="ignore",
+            )
+
+            writer.writeheader()
+            writer.writerows(transactions)
+
+    elif export_format == "json":
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(
+                transactions,
+                file,
+                ensure_ascii=False,
+                indent=4,
+            )
+
+    return file_path
