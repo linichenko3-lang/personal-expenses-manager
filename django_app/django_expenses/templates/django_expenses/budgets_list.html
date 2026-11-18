@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+
+    {% if budgets %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Категорія</th>
+                    <th>Місячний ліміт</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for budget in budgets %}
+                    <tr>
+                        <td>{{ budget.category }}</td>
+                        <td>{{ budget.monthly_limit }} грн</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Бюджетів поки немає.</p>
+    {% endif %}
+
+    <p><a href="{% url 'home' %}">На головну</a></p>
+</body>
+</html>

@@ -5,14 +5,26 @@
     <title>{{ title }}</title>
 </head>
 <body>
-    <h1>Застосунок Expense Tracker</h1>
-    <p>Гроші люблять лік</p>
-    <nav>
-        <ul>
-            <li><a href="{% url 'home' %}">Головна</a></li>
-            <li><a href="{% url 'about' %}">Про нас</a></li>
-            <li><a href="{% url 'contacts' %}">Контакти</a></li>
-        </ul>
-    </nav>
+    <h1>{{ title }}</h1>
+
+    <h2>Фінансовий підсумок</h2>
+
+    <p>Загальний дохід: {{ total_income }} грн</p>
+    <p>Загальні витрати: {{ total_expense }} грн</p>
+    <p><strong>Баланс: {{ balance }} грн</strong></p>
+
+    <hr>
+
+    <h2>Меню</h2>
+
+    <ul>
+        <li><a href="{% url 'transactions_list' %}">Усі транзакції</a></li>
+        <li><a href="{% url 'income_list' %}">Доходи</a></li>
+        <li><a href="{% url 'expense_list' %}">Витрати</a></li>
+        <li><a href="{% url 'budgets_list' %}">Бюджети</a></li>
+        <li><a href="{% url 'about' %}">Про проєкт</a></li>
+        <li><a href="{% url 'contacts' %}">Контакти</a></li>
+    </ul>
+
 </body>
 </html>

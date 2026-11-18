@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+
+    <form method="GET">
+        <label for="month">Вибери місяць:</label>
+        <input
+            type="month"
+            id="month"
+            name="month"
+            value="{{ selected_month }}"
+        >
+        <button type="submit">Сформувати звіт</button>
+    </form>
+
+    <h2>Результати за {{ selected_month }}</h2>
+
+    <p>Загальний дохід: {{ total_income }} грн</p>
+    <p>Загальні витрати: {{ total_expense }} грн</p>
+    <p><strong>Баланс: {{ balance }} грн</strong></p>
+
+    <h2>Транзакції за місяць</h2>
+
+    {% if transactions %}
+        <ul>
+            {% for t in transactions %}
+                <li>
+                    {{ t.date }} — {{ t.category }} —
+                    {{ t.amount }} грн — {{ t.description }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>За цей місяць транзакцій немає.</p>
+    {% endif %}
+
+    <p><a href="{% url 'home' %}">На головну</a></p>
+</body>
+</html>

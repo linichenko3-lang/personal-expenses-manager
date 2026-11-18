@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <form method="GET">
+    <label for="category">Фільтр за категорією:</label>
+
+    <select name="category" id="category">
+        <option value="">Усі категорії</option>
+
+        {% for category in categories %}
+            <option value="{{ category }}"
+                {% if selected_category == category %}selected{% endif %}>
+                {{ category }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Фільтрувати</button>
+</form>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+
+    {% if transactions %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Сума</th>
+                    <th>Тип</th>
+                    <th>Категорія</th>
+                    <th>Дата</th>
+                    <th>Опис</th>
+                    <th>Деталі</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                    <tr>
+                        <td>{{ t.id }}</td>
+                        <td>{{ t.amount }} грн</td>
+                        <td>{{ t.type }}</td>
+                        <td>{{ t.category }}</td>
+                        <td>{{ t.date }}</td>
+                        <td>{{ t.description }}</td>
+                        <td>
+                            <a href="{% url 'transaction_detail' t.id %}">
+                                Переглянути
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Транзакцій поки немає.</p>
+    {% endif %}
+
+    {% if total %}
+        <h3>Загальна сума: {{ total }} грн</h3>
+    {% endif %}
+
+    <p><a href="{% url 'home' %}">На головну</a></p>
+</body>
+</html>
