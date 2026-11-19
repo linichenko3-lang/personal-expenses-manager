@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-
+from django.core.exceptions import ValidationError
 
 class Category(models.Model):
     """Категорії доходів і видатків."""
@@ -114,6 +114,29 @@ class Transaction(models.Model):
             .annotate(total=models.Sum("amount"))
             .order_by("-total")
         )
+
+    def clean(self):
+        """Перевірка коректності транзакції."""
+
+        if self.amount is not None and self.amount <= 0:
+            raise ValidationError(
+                "Сума повинна бути більше нуля"
+            )
+
+        if (
+            self.transaction_type == "expense"
+            and self.amount is not None
+            and self.amount > 100000
+        ):
+            raise ValidationError(
+                "Сума видатку не може перевищувати 100 000 грн"
+            )
+
+    def save(self, *args, **kwargs):
+        """Перевіряємо дані перед збереженням."""
+
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class Budget(models.Model):
