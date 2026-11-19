@@ -1,44 +1,58 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ title }}</h1>
+{% extends 'base.html' %}
 
-    <form method="GET">
-        <label for="month">Вибери місяць:</label>
-        <input
-            type="month"
-            id="month"
-            name="month"
-            value="{{ selected_month }}"
-        >
-        <button type="submit">Сформувати звіт</button>
-    </form>
+{% block title %}{{ title }} | Expense Tracker{% endblock %}
 
-    <h2>Результати за {{ selected_month }}</h2>
+{% block content %}
 
-    <p>Загальний дохід: {{ total_income }} грн</p>
-    <p>Загальні витрати: {{ total_expense }} грн</p>
-    <p><strong>Баланс: {{ balance }} грн</strong></p>
+<h2>{{ title }}</h2>
 
-    <h2>Транзакції за місяць</h2>
+<form method="GET">
+    <label for="month">Вибери місяць:</label>
+    <input
+        type="month"
+        id="month"
+        name="month"
+        value="{{ selected_month }}"
+    >
+    <button type="submit">Сформувати звіт</button>
+</form>
 
-    {% if transactions %}
-        <ul>
+<h3>Результати за {{ selected_month }}</h3>
+
+<p>Загальний дохід: {{ total_income|floatformat:2 }} грн</p>
+<p>Загальні витрати: {{ total_expense|floatformat:2 }} грн</p>
+<p><strong>Баланс: {{ balance|floatformat:2 }} грн</strong></p>
+
+<h3>Транзакції за місяць</h3>
+
+{% if transactions %}
+    <table class="transactions-table">
+        <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Категорія</th>
+                <th>Тип</th>
+                <th>Сума</th>
+                <th>Опис</th>
+            </tr>
+        </thead>
+
+        <tbody>
             {% for t in transactions %}
-                <li>
-                    {{ t.date }} — {{ t.category }} —
-                    {{ t.amount }} грн — {{ t.description }}
-                </li>
+                <tr>
+                    <td>{{ t.date }}</td>
+                    <td>{{ t.category }}</td>
+                    <td>{{ t.get_transaction_type_display }}</td>
+                    <td>{{ t.amount|floatformat:2 }} грн</td>
+                    <td>{{ t.description }}</td>
+                </tr>
             {% endfor %}
-        </ul>
-    {% else %}
-        <p>За цей місяць транзакцій немає.</p>
-    {% endif %}
+        </tbody>
+    </table>
+{% else %}
+    <p>За цей місяць транзакцій немає.</p>
+{% endif %}
 
-    <p><a href="{% url 'home' %}">На головну</a></p>
-</body>
-</html>
+<p><a href="{% url 'home' %}">На головну</a></p>
+
+{% endblock %}

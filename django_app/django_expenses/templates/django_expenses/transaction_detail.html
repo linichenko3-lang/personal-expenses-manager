@@ -8,7 +8,7 @@
     <h1>Деталі транзакції №{{ transaction.id }}</h1>
 
     <p><strong>Сума:</strong> {{ transaction.amount }} грн</p>
-    <p><strong>Тип:</strong> {{ transaction.type }}</p>
+    <p><strong>Тип транзакції:</strong> {{ transaction.get_transaction_type_display }}</p>
     <p><strong>Категорія:</strong> {{ transaction.category }}</p>
     <p><strong>Дата:</strong> {{ transaction.date }}</p>
     <p><strong>Опис:</strong> {{ transaction.description }}</p>

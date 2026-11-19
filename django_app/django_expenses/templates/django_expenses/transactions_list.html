@@ -5,6 +5,7 @@
 {% block content %}
 
 <h2>{{ title }}</h2>
+<p><strong>Загальна сума:</strong> {{ total|floatformat:2 }} ₴</p>
 
 <!-- Фільтрація за типом -->
 <div class="filters">
@@ -58,34 +59,33 @@
 
    <tbody>
     {% for t in transactions %}
-        <tr>
-            <td>{{ t.date }}</td>
-            <td>{{ t.category }}</td>
-            <td class="type-{{ t.type }}">{{ t.type }}</td>
-            <td>{{ t.amount|floatformat:2 }} ₴</td>
-            <td>
-                <a href="{% url 'transaction_detail' t.id %}">
-                    Деталі
-                </a>
+    <tr>
+        <td>{{ t.date }}</td>
+        <td>{{ t.category }}</td>
+        <td class="type-{{ t.transaction_type }}">
+            {{ t.get_transaction_type_display }}
+        </td>
+        <td>{{ t.amount|floatformat:2 }} ₴</td>
+        <td>
+            <a href="{% url 'transaction_detail' t.id %}">
+                Деталі
+            </a>
+            |
+            <a href="{% url 'edit_transaction' t.id %}">
+                Редагувати
+            </a>
+            |
+            <a href="{% url 'delete_transaction' t.id %}">
+                Видалити
+            </a>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="5">Транзакцій немає.</td>
+    </tr>
+{% endfor %}
 
-                |
-
-                <a href="{% url 'edit_transaction' t.id %}">
-                    Редагувати
-                </a>
-
-                |
-
-                <a href="{% url 'delete_transaction' t.id %}">
-                    Видалити
-                </a>
-            </td>
-        </tr>
-    {% empty %}
-        <tr>
-            <td colspan="5">Транзакцій немає.</td>
-        </tr>
-    {% endfor %}
 </tbody>
 
 </table>

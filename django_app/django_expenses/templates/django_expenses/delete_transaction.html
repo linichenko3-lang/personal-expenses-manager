@@ -10,7 +10,7 @@
 
 <div class="budget-card">
     <p><strong>Категорія:</strong> {{ transaction.category }}</p>
-    <p><strong>Тип:</strong> {{ transaction.type }}</p>
+    <p><strong>Тип:</strong>{{ transaction.get_transaction_type_display }}</p>
     <p><strong>Сума:</strong> {{ transaction.amount }} грн</p>
     <p><strong>Опис:</strong> {{ transaction.description }}</p>
 </div>

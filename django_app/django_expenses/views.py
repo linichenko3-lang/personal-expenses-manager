@@ -1,7 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
-
-
+from django.db.models import Sum
+from decimal import Decimal
+from .models import Transaction, Category, Budget
+from django.utils import timezone
 # =====================================================
 # Тимчасові дані для Expense Tracker
 # =====================================================
@@ -53,24 +55,30 @@ BUDGETS = [
 # =====================================================
 
 def home(request):
-    total_income = sum(
-        t["amount"] for t in TRANSACTIONS
-        if t["type"] == "income"
+    # Отримуємо транзакції поточного користувача
+    transactions = Transaction.objects.filter(user=request.user)
+
+    # Рахуємо доходи
+    total_income = (
+        transactions
+        .filter(transaction_type="income")
+        .aggregate(total=Sum("amount"))["total"]
+        or Decimal("0.00")
     )
 
-    total_expense = sum(
-        t["amount"] for t in TRANSACTIONS
-        if t["type"] == "expense"
+    # Рахуємо витрати
+    total_expense = (
+        transactions
+        .filter(transaction_type="expense")
+        .aggregate(total=Sum("amount"))["total"]
+        or Decimal("0.00")
     )
 
+    # Рахуємо баланс
     balance = total_income - total_expense
 
-    # Сортуємо транзакції за датою від нових до старих
-    recent_transactions = sorted(
-        TRANSACTIONS,
-        key=lambda t: t["date"],
-        reverse=True
-    )[:5]
+    # Останні 5 транзакцій
+    recent_transactions = transactions.order_by("-date")[:5]
 
     context = {
         "title": "Панель керування",
@@ -85,6 +93,7 @@ def home(request):
         "django_expenses/home.html",
         context
     )
+
 
 def about(request):
     context = {
@@ -108,36 +117,42 @@ def contacts(request):
 # =====================================================
 
 def transactions_list(request):
-    # Отримуємо параметри фільтрації з URL
     selected_category = request.GET.get("category")
     selected_type = request.GET.get("type")
 
-    transactions = TRANSACTIONS
+    # Отримуємо транзакції з бази даних
+    transactions = Transaction.objects.filter(user=request.user)
 
     # Фільтрація за категорією
     if selected_category:
-        transactions = [
-            t for t in transactions
-            if t["category"] == selected_category
-        ]
+        transactions = transactions.filter(
+            category__name=selected_category
+        )
 
     # Фільтрація за типом
     if selected_type:
-        transactions = [
-            t for t in transactions
-            if t["type"] == selected_type
-        ]
-
-    categories = sorted({
-        t["category"] for t in TRANSACTIONS
-    })
+        transactions = transactions.filter(
+            transaction_type=selected_type
+        )
+    total = transactions.aggregate(
+    total=Sum("amount")
+        )["total"] or Decimal("0.00")
+    # Список категорій
+    categories = (
+        Transaction.objects
+        .filter(user=request.user)
+        .values_list("category__name", flat=True)
+        .distinct()
+        .order_by("category__name")
+    )
 
     context = {
         "title": "Мої транзакції",
-        "transactions": transactions,
+        "transactions": transactions.order_by("-date"),
         "categories": categories,
         "selected_category": selected_category,
         "selected_type": selected_type,
+        "total": total,
     }
 
     return render(
@@ -148,62 +163,64 @@ def transactions_list(request):
 
 
 def transaction_detail(request, transaction_id):
-    """Деталі окремої транзакції."""
-
-    transaction = next(
-        (t for t in TRANSACTIONS if t["id"] == transaction_id),
-        None
+    transaction = get_object_or_404(
+        Transaction,
+        id=transaction_id,
+        user=request.user,
     )
 
-    if transaction is None:
-        return HttpResponse("Транзакція не знайдена", status=404)
-
-    context = {"transaction": transaction}
+    context = {
+        "transaction": transaction,
+    }
 
     return render(
         request,
         "django_expenses/transaction_detail.html",
-        context
+        context,
     )
 
 def edit_transaction(request, transaction_id):
-    transaction = next(
-        (t for t in TRANSACTIONS if t["id"] == transaction_id),
-        None
+    transaction = get_object_or_404(
+        Transaction,
+        id=transaction_id,
+        user=request.user,
     )
 
-    if transaction is None:
-        return HttpResponse("Транзакцію не знайдено", status=404)
-
     if request.method == "POST":
-        transaction["amount"] = float(request.POST.get("amount"))
-        transaction["category"] = request.POST.get("category")
-        transaction["description"] = request.POST.get("description")
+        transaction.amount = request.POST.get("amount")
+        transaction.description = request.POST.get("description")
+
+        category_name = request.POST.get("category")
+        transaction.category = get_object_or_404(
+            Category,
+            name=category_name,
+        )
+
+        transaction.save()
 
         return redirect("transactions_list")
 
     context = {
         "transaction": transaction,
+        "categories": Category.objects.all(),
         "title": "Редагування транзакції",
     }
 
     return render(
         request,
         "django_expenses/edit_transaction.html",
-        context
+        context,
     )
 
 def delete_transaction(request, transaction_id):
-    transaction = next(
-        (t for t in TRANSACTIONS if t["id"] == transaction_id),
-        None
+    transaction = get_object_or_404(
+        Transaction,
+        id=transaction_id,
+        user=request.user,
     )
 
-    if transaction is None:
-        return HttpResponse("Транзакцію не знайдено", status=404)
-
     if request.method == "POST":
-        TRANSACTIONS.remove(transaction)
+        transaction.delete()
         return redirect("transactions_list")
 
     context = {
@@ -214,85 +231,110 @@ def delete_transaction(request, transaction_id):
     return render(
         request,
         "django_expenses/delete_transaction.html",
-        context
+        context,
     )
 
 def budgets_list(request):
     """Список бюджетів."""
 
+    budgets = (
+        Budget.objects
+        .filter(user=request.user)
+        .select_related("category")
+    )
+
     context = {
         "title": "Бюджети",
-        "budgets": BUDGETS,
+        "budgets": budgets,
     }
 
     return render(
         request,
         "django_expenses/budgets_list.html",
-        context
+        context,
     )
-
 
 def income_list(request):
     """Список тільки доходів."""
 
-    income_transactions = [
-        t for t in TRANSACTIONS
-        if t["type"] == "income"
-    ]
+    income_transactions = Transaction.objects.filter(
+        user=request.user,
+        transaction_type="income",
+    )
 
-    total = sum(t["amount"] for t in income_transactions)
+    total = income_transactions.aggregate(
+        total=Sum("amount")
+    )["total"] or Decimal("0.00")
 
     context = {
         "title": "Доходи",
         "transactions": income_transactions,
         "total": total,
+        "categories": Category.objects.filter(transactions__user=request.user
+).values_list("name", flat=True).distinct(),
+"selected_type": "income",
     }
 
     return render(
         request,
         "django_expenses/transactions_list.html",
-        context
+        context,
     )
 
 
 def expense_list(request):
     """Список тільки витрат."""
 
-    expense_transactions = [
-        t for t in TRANSACTIONS
-        if t["type"] == "expense"
-    ]
+    expense_transactions = Transaction.objects.filter(
+        user=request.user,
+        transaction_type="expense",
+    )
 
-    total = sum(t["amount"] for t in expense_transactions)
+    total = expense_transactions.aggregate(
+        total=Sum("amount")
+    )["total"] or Decimal("0.00")
 
     context = {
         "title": "Витрати",
         "transactions": expense_transactions,
         "total": total,
+        "categories": Category.objects.filter(transactions__user=request.user
+).values_list("name", flat=True).distinct(),
+"selected_type": "expense",
     }
 
     return render(
         request,
         "django_expenses/transactions_list.html",
-        context
+        context,
     )
 
 def monthly_report(request):
-    selected_month = request.GET.get("month", "2024-01")
-
-    monthly_transactions = [
-        t for t in TRANSACTIONS
-        if t["date"].startswith(selected_month)
-    ]
-
-    total_income = sum(
-        t["amount"] for t in monthly_transactions
-        if t["type"] == "income"
+    selected_month = request.GET.get(
+        "month",
+        timezone.localdate().strftime("%Y-%m"),
     )
 
-    total_expense = sum(
-        t["amount"] for t in monthly_transactions
-        if t["type"] == "expense"
+    year, month = map(int, selected_month.split("-"))
+
+    monthly_transactions = Transaction.objects.filter(
+        user=request.user,
+        date__year=year,
+        date__month=month,
+    ).order_by("-date")
+
+    total_income = (
+        monthly_transactions
+        .filter(transaction_type="income")
+        .aggregate(total=Sum("amount"))["total"]
+        or Decimal("0.00")
+    )
+
+    total_expense = (
+        monthly_transactions
+        .filter(transaction_type="expense")
+        .aggregate(total=Sum("amount"))["total"]
+        or Decimal("0.00")
     )
 
     balance = total_income - total_expense
@@ -309,6 +351,5 @@ def monthly_report(request):
     return render(
         request,
         "django_expenses/monthly_report.html",
-        context
+        context,
     )
-

@@ -21,17 +21,40 @@
             required
         >
     </div>
+    
+<div>
+    <label for="transaction_type">Тип транзакції:</label>
+    <select id="transaction_type" name="transaction_type" required>
+        <option
+            value="income"
+            {% if transaction.transaction_type == "income" %}selected{% endif %}
+        >
+            Дохід
+        </option>
+
+        <option
+            value="expense"
+            {% if transaction.transaction_type == "expense" %}selected{% endif %}
+        >
+            Видаток
+        </option>
+    </select>
+</div>
 
     <div>
-        <label for="category">Категорія:</label>
-        <input
-            type="text"
-            id="category"
-            name="category"
-            value="{{ transaction.category }}"
-            required
-        >
-    </div>
+    <label for="category">Категорія:</label>
+    <select id="category" name="category" required>
+        {% for category in categories %}
+            <option
+                value="{{ category.name }}"
+                {% if transaction.category_id == category.id %}selected{% endif %}
+            >
+                {{ category.name }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
 
     <div>
         <label for="description">Опис:</label>

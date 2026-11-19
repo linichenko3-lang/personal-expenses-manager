@@ -1,33 +1,50 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ title }}</h1>
+{% extends 'base.html' %}
 
-    {% if budgets %}
-        <table border="1">
-            <thead>
+{% block title %}{{ title }} | Expense Tracker{% endblock %}
+
+{% block content %}
+
+<h2>{{ title }}</h2>
+
+{% if budgets %}
+    <table class="transactions-table">
+        <thead>
+            <tr>
+                <th>Категорія</th>
+                <th>Місяць</th>
+                <th>Річний ліміт</th>
+                <th>Витрачено</th>
+                <th>Залишок</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for budget in budgets %}
                 <tr>
-                    <th>Категорія</th>
-                    <th>Місячний ліміт</th>
+                    <td>{{ budget.category }}</td>
+                    <td>{{ budget.month }}/{{ budget.year }}</td>
+                    <td>{{ budget.limit }} грн</td>
+                    <td>{{ budget.get_spent }} грн</td>
+                    <td>{{ budget.get_remaining }} грн</td>
+                    <td>
+                        {% if budget.is_exceeded %}
+                            Перевищено
+                        {% else %}
+                            У межах бюджету
+                        {% endif %}
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                {% for budget in budgets %}
-                    <tr>
-                        <td>{{ budget.category }}</td>
-                        <td>{{ budget.monthly_limit }} грн</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Бюджетів поки немає.</p>
-    {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Бюджетів поки немає.</p>
+{% endif %}
 
-    <p><a href="{% url 'home' %}">На головну</a></p>
-</body>
-</html>
+<p><a href="{% url 'home' %}">На головну</a></p>
+
+{% endblock %}
+
+
+
