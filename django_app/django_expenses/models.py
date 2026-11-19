@@ -72,6 +72,48 @@ class Transaction(models.Model):
             f" - {self.amount} ₴ "
             f"({self.get_transaction_type_display()})"
         )
+    @classmethod
+    def get_monthly_stats(cls, user, month, year):
+        """Статистика доходів і витрат за місяць."""
+
+        transactions = cls.objects.filter(
+            user=user,
+            date__month=month,
+            date__year=year
+        )
+
+        income = transactions.filter(
+            transaction_type="income"
+        ).aggregate(
+            total=models.Sum("amount")
+        )["total"] or 0
+
+        expense = transactions.filter(
+            transaction_type="expense"
+        ).aggregate(
+            total=models.Sum("amount")
+        )["total"] or 0
+
+        return {
+            "income": income,
+            "expense": expense,
+            "balance": income - expense
+        }
+
+    @classmethod
+    def get_by_category(cls, user):
+        """Витрати за категоріями."""
+
+        return (
+            cls.objects
+            .filter(
+                user=user,
+                transaction_type="expense"
+            )
+            .values("category__name")
+            .annotate(total=models.Sum("amount"))
+            .order_by("-total")
+        )
 
 
 class Budget(models.Model):
