@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 
 
@@ -53,8 +53,6 @@ BUDGETS = [
 # =====================================================
 
 def home(request):
-    """Головна сторінка."""
-
     total_income = sum(
         t["amount"] for t in TRANSACTIONS
         if t["type"] == "income"
@@ -67,30 +65,36 @@ def home(request):
 
     balance = total_income - total_expense
 
+    # Сортуємо транзакції за датою від нових до старих
+    recent_transactions = sorted(
+        TRANSACTIONS,
+        key=lambda t: t["date"],
+        reverse=True
+    )[:5]
+
     context = {
-        "title": "Expense Tracker",
+        "title": "Панель керування",
         "total_income": total_income,
         "total_expense": total_expense,
         "balance": balance,
+        "recent_transactions": recent_transactions,
     }
 
-    return render(request, "django_expenses/home.html", context)
-
+    return render(
+        request,
+        "django_expenses/home.html",
+        context
+    )
 
 def about(request):
-    """Сторінка про застосунок."""
-
     context = {
-        "title": "Про нас",
-        "text": "Це сторінка з інформацією про проєкт.",
+        "title": "Про застосунок",
+        "text": "Expense Tracker — застосунок для обліку доходів, витрат і бюджетів.",
     }
 
     return render(request, "django_expenses/about.html", context)
 
-
 def contacts(request):
-    """Сторінка контактів."""
-
     context = {
         "title": "Контакти",
         "email": "info@example.com",
@@ -99,20 +103,29 @@ def contacts(request):
 
     return render(request, "django_expenses/contacts.html", context)
 
-
 # =====================================================
 # Транзакції та бюджети
 # =====================================================
 
 def transactions_list(request):
+    # Отримуємо параметри фільтрації з URL
     selected_category = request.GET.get("category")
+    selected_type = request.GET.get("type")
 
     transactions = TRANSACTIONS
 
+    # Фільтрація за категорією
     if selected_category:
         transactions = [
-            t for t in TRANSACTIONS
+            t for t in transactions
             if t["category"] == selected_category
+        ]
+
+    # Фільтрація за типом
+    if selected_type:
+        transactions = [
+            t for t in transactions
+            if t["type"] == selected_type
         ]
 
     categories = sorted({
@@ -124,6 +137,7 @@ def transactions_list(request):
         "transactions": transactions,
         "categories": categories,
         "selected_category": selected_category,
+        "selected_type": selected_type,
     }
 
     return render(
@@ -152,6 +166,56 @@ def transaction_detail(request, transaction_id):
         context
     )
 
+def edit_transaction(request, transaction_id):
+    transaction = next(
+        (t for t in TRANSACTIONS if t["id"] == transaction_id),
+        None
+    )
+
+    if transaction is None:
+        return HttpResponse("Транзакцію не знайдено", status=404)
+
+    if request.method == "POST":
+        transaction["amount"] = float(request.POST.get("amount"))
+        transaction["category"] = request.POST.get("category")
+        transaction["description"] = request.POST.get("description")
+
+        return redirect("transactions_list")
+
+    context = {
+        "transaction": transaction,
+        "title": "Редагування транзакції",
+    }
+
+    return render(
+        request,
+        "django_expenses/edit_transaction.html",
+        context
+    )
+
+def delete_transaction(request, transaction_id):
+    transaction = next(
+        (t for t in TRANSACTIONS if t["id"] == transaction_id),
+        None
+    )
+
+    if transaction is None:
+        return HttpResponse("Транзакцію не знайдено", status=404)
+
+    if request.method == "POST":
+        TRANSACTIONS.remove(transaction)
+        return redirect("transactions_list")
+
+    context = {
+        "transaction": transaction,
+        "title": "Видалення транзакції",
+    }
+
+    return render(
+        request,
+        "django_expenses/delete_transaction.html",
+        context
+    )
 
 def budgets_list(request):
     """Список бюджетів."""

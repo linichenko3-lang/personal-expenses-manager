@@ -1,9 +1,33 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-    <form method="GET">
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | Expense Tracker{% endblock %}
+
+{% block content %}
+
+<h2>{{ title }}</h2>
+
+<!-- Фільтрація за типом -->
+<div class="filters">
+    <a href="{% url 'transactions_list' %}"
+       class="filter-btn {% if not selected_type %}active{% endif %}">
+        Усі
+    </a>
+
+    <a href="?type=income"
+       class="filter-btn {% if selected_type == 'income' %}active{% endif %}">
+        Доходи
+    </a>
+
+    <a href="?type=expense"
+       class="filter-btn {% if selected_type == 'expense' %}active{% endif %}">
+        Витрати
+    </a>
+</div>
+
+<!-- Фільтрація за категорією -->
+<form method="GET">
+    <input type="hidden" name="type" value="{{ selected_type|default:'' }}">
+
     <label for="category">Фільтр за категорією:</label>
 
     <select name="category" id="category">
@@ -19,49 +43,53 @@
 
     <button type="submit">Фільтрувати</button>
 </form>
-</head>
-<body>
-    <h1>{{ title }}</h1>
 
-    {% if transactions %}
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Сума</th>
-                    <th>Тип</th>
-                    <th>Категорія</th>
-                    <th>Дата</th>
-                    <th>Опис</th>
-                    <th>Деталі</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for t in transactions %}
-                    <tr>
-                        <td>{{ t.id }}</td>
-                        <td>{{ t.amount }} грн</td>
-                        <td>{{ t.type }}</td>
-                        <td>{{ t.category }}</td>
-                        <td>{{ t.date }}</td>
-                        <td>{{ t.description }}</td>
-                        <td>
-                            <a href="{% url 'transaction_detail' t.id %}">
-                                Переглянути
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Транзакцій поки немає.</p>
-    {% endif %}
+<!-- Таблиця транзакцій -->
+<table class="transactions-table">
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Категорія</th>
+            <th>Тип</th>
+            <th>Сума</th>
+            <th>Дія</th>
+        </tr>
+    </thead>
 
-    {% if total %}
-        <h3>Загальна сума: {{ total }} грн</h3>
-    {% endif %}
+   <tbody>
+    {% for t in transactions %}
+        <tr>
+            <td>{{ t.date }}</td>
+            <td>{{ t.category }}</td>
+            <td class="type-{{ t.type }}">{{ t.type }}</td>
+            <td>{{ t.amount|floatformat:2 }} ₴</td>
+            <td>
+                <a href="{% url 'transaction_detail' t.id %}">
+                    Деталі
+                </a>
 
-    <p><a href="{% url 'home' %}">На головну</a></p>
-</body>
-</html>
+                |
+
+                <a href="{% url 'edit_transaction' t.id %}">
+                    Редагувати
+                </a>
+
+                |
+
+                <a href="{% url 'delete_transaction' t.id %}">
+                    Видалити
+                </a>
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="5">Транзакцій немає.</td>
+        </tr>
+    {% endfor %}
+</tbody>
+
+</table>
+
+<p><a href="{% url 'home' %}">На головну</a></p>
+
+{% endblock %}

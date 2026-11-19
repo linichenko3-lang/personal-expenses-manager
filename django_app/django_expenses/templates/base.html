@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Expense Tracker{% endblock %}</title>
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <h1>💰 Expense & Budget Tracker</h1>
+
+            <nav>
+                <a href="{% url 'home' %}">Панель керування</a>
+                <a href="{% url 'transactions_list' %}">Транзакції</a>
+                <a href="{% url 'budgets_list' %}">Бюджети</a>
+                <a href="{% url 'monthly_report' %}">Звіти</a>
+                <a href="{% url 'about' %}">Про застосунок</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Expense Tracker | Керуйте своїми фінансами розумно</p>
+    </footer>
+
+    <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+</html>

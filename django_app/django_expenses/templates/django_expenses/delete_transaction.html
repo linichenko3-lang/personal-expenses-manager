@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Видалення транзакції{% endblock %}
+
+{% block content %}
+
+<h2>Видалення транзакції</h2>
+
+<p>Ти справді хочеш видалити цю транзакцію?</p>
+
+<div class="budget-card">
+    <p><strong>Категорія:</strong> {{ transaction.category }}</p>
+    <p><strong>Тип:</strong> {{ transaction.type }}</p>
+    <p><strong>Сума:</strong> {{ transaction.amount }} грн</p>
+    <p><strong>Опис:</strong> {{ transaction.description }}</p>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <button type="submit" class="btn btn-primary">
+        Так, видалити
+    </button>
+
+    <a href="{% url 'transactions_list' %}">
+        Скасувати
+    </a>
+</form>
+
+{% endblock %}

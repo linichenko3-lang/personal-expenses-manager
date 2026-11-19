@@ -22,4 +22,6 @@ urlpatterns = [
 
     # Бюджети
     path("budgets/", views.budgets_list, name="budgets_list"),
+    path("transactions/<int:transaction_id>/edit/", views.edit_transaction, name="edit_transaction"),
+    path("transactions/<int:transaction_id>/delete/", views.delete_transaction, name="delete_transaction"),
 ]
