@@ -1,5 +1,5 @@
 from django import forms
-from .models import Transaction, Category
+from .models import Transaction, Category, Budget
 
 
 class ExpenseForm(forms.ModelForm):
@@ -107,3 +107,71 @@ class IncomeForm(forms.ModelForm):
         self.fields["category"].queryset = Category.objects.filter(
             category_type="income"
        )
+
+class BudgetForm(forms.ModelForm):
+    """Форма для створення та редагування бюджету."""
+
+    class Meta:
+        model = Budget
+        fields = [
+            "category",
+            "month",
+            "year",
+            "limit",
+        ]
+
+        labels = {
+            "category": "Категорія витрат",
+            "month": "Місяць",
+            "year": "Рік",
+            "limit": "Місячний ліміт (грн)",
+        }
+
+        widgets = {
+            "category": forms.Select(),
+            "month": forms.NumberInput(
+                attrs={
+                    "placeholder": "Введіть номер місяця (1–12)",
+                    "min": "1",
+                    "max": "12",
+                }
+            ),
+            "year": forms.NumberInput(
+                attrs={
+                    "placeholder": "Наприклад, 2026",
+                }
+            ),
+            "limit": forms.NumberInput(
+                attrs={
+                    "placeholder": "Введіть суму бюджету",
+                    "step": "0.01",
+                    "min": "0.01",
+                }
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["category"].queryset = Category.objects.filter(
+            category_type="expense"
+        )
+
+    def clean_month(self):
+        month = self.cleaned_data["month"]
+
+        if not 1 <= month <= 12:
+            raise forms.ValidationError(
+                "Місяць повинен бути від 1 до 12."
+            )
+
+        return month
+
+    def clean_limit(self):
+        limit = self.cleaned_data["limit"]
+
+        if limit <= 0:
+            raise forms.ValidationError(
+                "Бюджет повинен бути більшим за нуль."
+            )
+
+        return limit
