@@ -4,7 +4,7 @@ from decimal import Decimal
 from .models import Transaction, Category, Budget
 from django.utils import timezone
 from django.contrib import messages
-from .forms import ExpenseForm
+from .forms import ExpenseForm, IncomeForm
 
 # =====================================================
 # Статичні сторінки
@@ -336,6 +336,38 @@ def expense_update(request, transaction_id):
         context,
     )
 
+def expense_delete(request, transaction_id):
+    """Видалення витрати."""
+
+    expense = get_object_or_404(
+        Transaction,
+        id=transaction_id,
+        user=request.user,
+        transaction_type="expense",
+    )
+
+    if request.method == "POST":
+        expense.delete()
+
+        messages.success(
+            request,
+            "Витрату успішно видалено!"
+        )
+
+        return redirect("expense_list")
+
+    context = {
+        "title": "Видалення витрати",
+        "expense": expense,
+    }
+
+    return render(
+        request,
+        "django_expenses/expense_confirm_delete.html",
+        context,
+    )
+
+
 def monthly_report(request):
     selected_month = request.GET.get(
         "month",
@@ -378,5 +410,31 @@ def monthly_report(request):
     return render(
         request,
         "django_expenses/monthly_report.html",
+        context,
+    )
+
+def income_create(request):
+    if request.method == "POST":
+        form = IncomeForm(request.POST)
+
+        if form.is_valid():
+            income = form.save(commit=False)
+            income.user = request.user
+            income.transaction_type = "income"
+            income.save()
+
+            messages.success(request, "Дохід успішно додано!")
+            return redirect("income_list")
+    else:
+        form = IncomeForm()
+
+    context = {
+        "title": "Додавання доходу",
+        "form": form,
+    }
+
+    return render(
+        request,
+        "django_expenses/expense_form.html",
         context,
     )

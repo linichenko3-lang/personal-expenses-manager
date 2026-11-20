@@ -4,6 +4,17 @@
 
 {% block content %}
 
+
+<div class="actions">
+    <a href="{% url 'expense_create' %}" class="btn btn-primary">
+        + Додати витрату
+    </a>
+</div>
+
+<a href="{% url 'income_create' %}" class="btn btn-primary">
+    + Додати дохід
+</a>
+
 <h2>{{ title }}</h2>
 <p><strong>Загальна сума:</strong> {{ total|floatformat:2 }} ₴</p>
 
@@ -66,25 +77,19 @@
             {{ t.get_transaction_type_display }}
         </td>
         <td>{{ t.amount|floatformat:2 }} ₴</td>
-        <td>
-            <a href="{% url 'transaction_detail' t.id %}">
-                Деталі
-            </a>
-            |
-           {% if t.transaction_type == "expense" %}
-                <a href="{% url 'expense_update' t.id %}">
-                Редагувати
-                </a>
-            {% else %}
-                <a href="{% url 'edit_transaction' t.id %}">
-                Редагувати
-                </a>
-            {% endif %}
-            |
-            <a href="{% url 'delete_transaction' t.id %}">
-                Видалити
-            </a>
-        </td>
+       <td>
+    <a href="{% url 'transaction_detail' t.id %}">Деталі</a>
+    |
+    {% if t.transaction_type == "expense" %}
+        <a href="{% url 'expense_update' t.id %}">Редагувати</a>
+        |
+        <a href="{% url 'expense_delete' t.id %}">Видалити</a>
+    {% else %}
+        <a href="{% url 'edit_transaction' t.id %}">Редагувати</a>
+        |
+        <a href="{% url 'delete_transaction' t.id %}">Видалити</a>
+    {% endif %}
+</td>
     </tr>
 {% empty %}
     <tr>

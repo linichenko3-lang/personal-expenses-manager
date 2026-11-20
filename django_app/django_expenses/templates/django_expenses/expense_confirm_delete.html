@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Видалення витрати{% endblock %}
+
+{% block content %}
+
+<h2>Видалення витрати</h2>
+
+<p>Ти справді хочеш видалити цю витрату?</p>
+
+<p><strong>Сума:</strong> {{ expense.amount }} грн</p>
+<p><strong>Категорія:</strong> {{ expense.category }}</p>
+<p><strong>Дата:</strong> {{ expense.date }}</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <button type="submit" class="btn btn-primary">
+        Так, видалити
+    </button>
+
+    <a href="{% url 'expense_list' %}">Скасувати</a>
+</form>
+
+{% endblock %}

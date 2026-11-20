@@ -8,17 +8,13 @@
 
 <form method="POST">
     {% csrf_token %}
-
     {{ form.as_p }}
 
     <button type="submit" class="btn btn-primary">
-        Зберегти витрату
+        Зберегти
     </button>
 
-    <a href="{% url 'expense_list' %}">
-        Скасувати
-    </a>
+    <a href="{% url 'home' %}">Скасувати</a>
 </form>
 
 {% endblock %}
-

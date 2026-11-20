@@ -5,7 +5,20 @@ from django.core.exceptions import ValidationError
 class Category(models.Model):
     """Категорії доходів і видатків."""
 
+    CATEGORY_TYPES = [
+        ("income", "Дохід"),
+        ("expense", "Витрата"),
+    ]
+
     name = models.CharField(max_length=50)
+
+    category_type = models.CharField(
+        max_length=10,
+        choices=CATEGORY_TYPES,
+        default="expense",
+        verbose_name="Тип категорії",
+    )
+
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
