@@ -3,6 +3,8 @@ from django.db.models import Sum
 from decimal import Decimal
 from .models import Transaction, Category, Budget
 from django.utils import timezone
+from django.contrib import messages
+from .forms import ExpenseForm
 
 # =====================================================
 # Статичні сторінки
@@ -261,6 +263,39 @@ def expense_list(request):
     return render(
         request,
         "django_expenses/transactions_list.html",
+        context,
+    )
+
+def expense_create(request):
+    """Створення нової витрати."""
+
+    if request.method == "POST":
+        form = ExpenseForm(request.POST)
+
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.user = request.user
+            expense.transaction_type = "expense"
+            expense.save()
+
+            messages.success(
+                request,
+                "Витрату успішно додано!"
+            )
+
+            return redirect("expense_list")
+
+    else:
+        form = ExpenseForm()
+
+    context = {
+        "title": "Додавання витрати",
+        "form": form,
+    }
+
+    return render(
+        request,
+        "django_expenses/expense_form.html",
         context,
     )
 
