@@ -29,4 +29,5 @@ urlpatterns = [
     path("expenses/<int:transaction_id>/delete/", views.expense_delete, name="expense_delete"),
     path("income/create/", views.income_create, name="income_create"),
     path("budgets/create/", views.budget_create, name="budget_create"),
+    path("budgets/<int:budget_id>/edit/", views.budget_update, name="budget_update"),
 ]

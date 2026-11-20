@@ -16,6 +16,7 @@
                 <th>Витрачено</th>
                 <th>Залишок</th>
                 <th>Статус</th>
+                <th>Дії</th>
             </tr>
         </thead>
 
@@ -33,6 +34,11 @@
                         {% else %}
                             У межах бюджету
                         {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'budget_update' budget.id %}">
+                            Редагувати
+                        </a>
                     </td>
                 </tr>
             {% endfor %}

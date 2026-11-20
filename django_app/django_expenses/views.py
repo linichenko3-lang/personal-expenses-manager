@@ -467,3 +467,36 @@ def budget_create(request):
         "django_expenses/expense_form.html",
         context,
     )
+
+def budget_update(request, budget_id):
+    budget = get_object_or_404(
+        Budget,
+        id=budget_id,
+        user=request.user,
+    )
+
+    if request.method == "POST":
+        form = BudgetForm(request.POST, instance=budget)
+
+        if form.is_valid():
+            form.save()
+
+            messages.success(
+                request,
+                "Бюджет успішно оновлено!"
+            )
+            return redirect("budgets_list")
+
+    else:
+        form = BudgetForm(instance=budget)
+
+    context = {
+        "title": "Редагування бюджету",
+        "form": form,
+    }
+
+    return render(
+        request,
+        "django_expenses/expense_form.html",
+        context,
+    )
