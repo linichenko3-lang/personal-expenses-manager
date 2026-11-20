@@ -1,54 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
 from django.db.models import Sum
 from decimal import Decimal
 from .models import Transaction, Category, Budget
 from django.utils import timezone
-# =====================================================
-# Тимчасові дані для Expense Tracker
-# =====================================================
-
-TRANSACTIONS = [
-    {
-        "id": 1,
-        "amount": 30000,
-        "type": "income",
-        "category": "Salary",
-        "date": "2024-01-15",
-        "description": "Зарплата за січень",
-    },
-    {
-        "id": 2,
-        "amount": 5000,
-        "type": "expense",
-        "category": "Food",
-        "date": "2024-01-16",
-        "description": "Продукти",
-    },
-    {
-        "id": 3,
-        "amount": 3000,
-        "type": "expense",
-        "category": "Transport",
-        "date": "2024-01-17",
-        "description": "Бензин",
-    },
-    {
-        "id": 4,
-        "amount": 15000,
-        "type": "income",
-        "category": "Freelance",
-        "date": "2024-01-18",
-        "description": "Проєкт для клієнта",
-    },
-]
-
-BUDGETS = [
-    {"category": "Food", "monthly_limit": 10000},
-    {"category": "Transport", "monthly_limit": 5000},
-    {"category": "Entertainment", "monthly_limit": 3000},
-]
-
 
 # =====================================================
 # Статичні сторінки
@@ -188,6 +142,7 @@ def edit_transaction(request, transaction_id):
 
     if request.method == "POST":
         transaction.amount = request.POST.get("amount")
+        transaction.transaction_type = request.POST.get("transaction_type")
         transaction.description = request.POST.get("description")
 
         category_name = request.POST.get("category")
@@ -271,8 +226,8 @@ def income_list(request):
         "transactions": income_transactions,
         "total": total,
         "categories": Category.objects.filter(transactions__user=request.user
-).values_list("name", flat=True).distinct(),
-"selected_type": "income",
+        ).values_list("name", flat=True).distinct(),
+        "selected_type": "income",
     }
 
     return render(
@@ -299,8 +254,8 @@ def expense_list(request):
         "transactions": expense_transactions,
         "total": total,
         "categories": Category.objects.filter(transactions__user=request.user
-).values_list("name", flat=True).distinct(),
-"selected_type": "expense",
+        ).values_list("name", flat=True).distinct(),
+        "selected_type": "expense",
     }
 
     return render(
