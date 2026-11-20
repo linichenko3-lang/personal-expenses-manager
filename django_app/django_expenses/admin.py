@@ -4,44 +4,72 @@ from .models import Category, Transaction, Budget
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ["name", "icon", "transaction_count"]
-    search_fields = ["name"]
+    list_display = (
+        "id",
+        "name",
+        "category_type",
+        "created_at",
+    )
 
-    def transaction_count(self, obj):
-        return obj.transactions.count()
+    search_fields = (
+        "name",
+        "description",
+    )
+
+    list_filter = (
+        "category_type",
+        "created_at",
+    )
+
+    ordering = ("name",)
 
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = [
-        "date",
+    list_display = (
+        "id",
         "user",
         "category",
-        "amount",
         "transaction_type",
-    ]
-    search_fields = [
+        "amount",
+        "date",
+    )
+
+    search_fields = (
         "user__username",
-        "description",
         "category__name",
-    ]
-    list_filter = ["transaction_type", "date", "category"]
-    date_hierarchy = "date"
-    readonly_fields = ["created_at"]
+        "description",
+    )
+
+    list_filter = (
+        "transaction_type",
+        "category",
+        "date",
+    )
+
+    ordering = ("-date",)
 
 
 @admin.register(Budget)
 class BudgetAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
+        "id",
         "user",
         "category",
         "month",
         "year",
         "limit",
-        "spent",
-    ]
-    search_fields = ["user__username", "category__name"]
-    list_filter = ["year", "month"]
+    )
 
-    def spent(self, obj):
-        return f"{obj.get_spent()} ₴"
+    search_fields = (
+        "user__username",
+        "category__name",
+    )
+
+    list_filter = (
+        "month",
+        "year",
+        "category",
+    )
+
+    ordering = ("-year", "-month")
