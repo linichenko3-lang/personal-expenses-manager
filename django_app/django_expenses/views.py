@@ -299,6 +299,43 @@ def expense_create(request):
         context,
     )
 
+def expense_update(request, transaction_id):
+    """Редагування витрати."""
+
+    expense = get_object_or_404(
+        Transaction,
+        id=transaction_id,
+        user=request.user,
+        transaction_type="expense",
+    )
+
+    if request.method == "POST":
+        form = ExpenseForm(request.POST, instance=expense)
+
+        if form.is_valid():
+            form.save()
+
+            messages.success(
+                request,
+                "Витрату успішно оновлено!"
+            )
+
+            return redirect("expense_list")
+
+    else:
+        form = ExpenseForm(instance=expense)
+
+    context = {
+        "title": "Редагування витрати",
+        "form": form,
+    }
+
+    return render(
+        request,
+        "django_expenses/expense_form.html",
+        context,
+    )
+
 def monthly_report(request):
     selected_month = request.GET.get(
         "month",
