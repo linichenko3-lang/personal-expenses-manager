@@ -39,6 +39,10 @@
                         <a href="{% url 'budget_update' budget.id %}">
                             Редагувати
                         </a>
+
+                        <a href="{% url 'budget_delete' budget.id %}">
+                            Видалити
+                        </a>
                     </td>
                 </tr>
             {% endfor %}

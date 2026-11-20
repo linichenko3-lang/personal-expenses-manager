@@ -500,3 +500,30 @@ def budget_update(request, budget_id):
         "django_expenses/expense_form.html",
         context,
     )
+
+def budget_delete(request, budget_id):
+    budget = get_object_or_404(
+        Budget,
+        id=budget_id,
+        user=request.user,
+    )
+
+    if request.method == "POST":
+        budget.delete()
+
+        messages.success(
+            request,
+            "Бюджет успішно видалено!"
+        )
+        return redirect("budgets_list")
+
+    context = {
+        "budget": budget,
+        "title": "Видалення бюджету",
+    }
+
+    return render(
+        request,
+        "django_expenses/budget_confirm_delete.html",
+        context,
+    )

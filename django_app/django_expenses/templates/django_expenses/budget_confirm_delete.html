@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Видалення бюджету{% endblock %}
+
+{% block content %}
+
+<h2>Видалення бюджету</h2>
+
+<p>Ти справді хочеш видалити цей бюджет?</p>
+
+<p><strong>Категорія:</strong> {{ budget.category }}</p>
+<p><strong>Місяць:</strong> {{ budget.month }}/{{ budget.year }}</p>
+<p><strong>Ліміт:</strong> {{ budget.limit }} грн</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <button type="submit" class="btn btn-danger">
+        Так, видалити
+    </button>
+
+    <a href="{% url 'budgets_list' %}">Скасувати</a>
+</form>
+
+{% endblock %}
