@@ -4,7 +4,7 @@ from decimal import Decimal
 from .models import Transaction, Category, Budget
 from django.utils import timezone
 from django.contrib import messages
-from .forms import ExpenseForm, IncomeForm
+from .forms import ExpenseForm, IncomeForm, BudgetForm
 
 # =====================================================
 # Статичні сторінки
@@ -430,6 +430,35 @@ def income_create(request):
 
     context = {
         "title": "Додавання доходу",
+        "form": form,
+    }
+
+    return render(
+        request,
+        "django_expenses/expense_form.html",
+        context,
+    )
+
+def budget_create(request):
+    if request.method == "POST":
+        form = BudgetForm(request.POST)
+
+        if form.is_valid():
+            budget = form.save(commit=False)
+            budget.user = request.user
+            budget.save()
+
+            messages.success(
+                request,
+                "Бюджет успішно створено!"
+            )
+            return redirect("budgets_list")
+
+    else:
+        form = BudgetForm()
+
+    context = {
+        "title": "Додавання бюджету",
         "form": form,
     }
 
