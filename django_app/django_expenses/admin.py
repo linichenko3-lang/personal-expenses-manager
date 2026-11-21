@@ -1,6 +1,10 @@
 from django.contrib import admin
 from .models import Category, Transaction, Budget
 
+admin.site.site_header = "Expense Tracker — Адміністрування"
+admin.site.site_title = "Expense Tracker"
+admin.site.index_title = "Керування фінансами"
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
