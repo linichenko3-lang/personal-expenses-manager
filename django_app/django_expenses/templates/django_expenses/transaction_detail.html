@@ -12,8 +12,9 @@
     <p><strong>Категорія:</strong> {{ transaction.category }}</p>
     <p><strong>Дата:</strong> {{ transaction.date }}</p>
     <p><strong>Опис:</strong> {{ transaction.description }}</p>
-
-    <p>
+    <p><strong>Власник:</strong> {{ transaction.user.username }}</p>
+    
+    </p>
         <a href="{% url 'transactions_list' %}">
             Повернутися до транзакцій
         </a>

@@ -8,6 +8,7 @@ from .forms import ExpenseForm, IncomeForm, BudgetForm
 from .forms import RegisterForm
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 
 # =====================================================
 # Статичні сторінки
@@ -80,7 +81,7 @@ def contacts(request):
 # =====================================================
 # Транзакції та бюджети
 # =====================================================
-
+@login_required
 def transactions_list(request):
     selected_category = request.GET.get("category")
     selected_type = request.GET.get("type")
@@ -126,7 +127,7 @@ def transactions_list(request):
         context
     )
 
-
+@login_required
 def transaction_detail(request, transaction_id):
     transaction = get_object_or_404(
         Transaction,
@@ -144,12 +145,15 @@ def transaction_detail(request, transaction_id):
         context,
     )
 
+@login_required
 def edit_transaction(request, transaction_id):
     transaction = get_object_or_404(
         Transaction,
         id=transaction_id,
-        user=request.user,
     )
+
+    if transaction.user != request.user:
+        raise PermissionDenied("Доступ заборонено.")
 
     if request.method == "POST":
         transaction.amount = request.POST.get("amount")
@@ -177,7 +181,7 @@ def edit_transaction(request, transaction_id):
         "django_expenses/edit_transaction.html",
         context,
     )
-
+@login_required
 def delete_transaction(request, transaction_id):
     transaction = get_object_or_404(
         Transaction,
@@ -200,6 +204,7 @@ def delete_transaction(request, transaction_id):
         context,
     )
 
+@login_required
 def budgets_list(request):
     """Список бюджетів."""
 
@@ -219,7 +224,7 @@ def budgets_list(request):
         "django_expenses/budgets_list.html",
         context,
     )
-
+@login_required
 def income_list(request):
     """Список тільки доходів."""
 
@@ -247,7 +252,7 @@ def income_list(request):
         context,
     )
 
-
+@login_required
 def expense_list(request):
     """Список тільки витрат."""
 
@@ -275,6 +280,7 @@ def expense_list(request):
         context,
     )
 
+@login_required
 def expense_create(request):
     """Створення нової витрати."""
 
@@ -308,15 +314,18 @@ def expense_create(request):
         context,
     )
 
+@login_required
 def expense_update(request, transaction_id):
-    """Редагування витрати."""
+    """Редагування лише власної витрати."""
 
     expense = get_object_or_404(
         Transaction,
         id=transaction_id,
-        user=request.user,
         transaction_type="expense",
     )
+
+    if expense.user != request.user:
+        raise PermissionDenied("Доступ заборонено.")
 
     if request.method == "POST":
         form = ExpenseForm(request.POST, instance=expense)
@@ -330,7 +339,6 @@ def expense_update(request, transaction_id):
             )
 
             return redirect("expense_list")
-
     else:
         form = ExpenseForm(instance=expense)
 
@@ -345,6 +353,7 @@ def expense_update(request, transaction_id):
         context,
     )
 
+@login_required
 def expense_delete(request, transaction_id):
     """Видалення витрати."""
 
@@ -376,7 +385,7 @@ def expense_delete(request, transaction_id):
         context,
     )
 
-
+@login_required
 def monthly_report(request):
     selected_month = request.GET.get(
         "month",
@@ -422,6 +431,7 @@ def monthly_report(request):
         context,
     )
 
+@login_required
 def income_create(request):
     if request.method == "POST":
         form = IncomeForm(request.POST)
@@ -448,6 +458,7 @@ def income_create(request):
         context,
     )
 
+@login_required
 def budget_create(request):
     if request.method == "POST":
         form = BudgetForm(request.POST)
@@ -477,12 +488,15 @@ def budget_create(request):
         context,
     )
 
+@login_required
 def budget_update(request, budget_id):
     budget = get_object_or_404(
         Budget,
         id=budget_id,
-        user=request.user,
     )
+
+    if budget.user != request.user:
+        raise PermissionDenied("Доступ заборонено.")
 
     if request.method == "POST":
         form = BudgetForm(request.POST, instance=budget)
@@ -509,7 +523,7 @@ def budget_update(request, budget_id):
         "django_expenses/expense_form.html",
         context,
     )
-
+@login_required
 def budget_delete(request, budget_id):
     budget = get_object_or_404(
         Budget,

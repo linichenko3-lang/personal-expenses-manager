@@ -6,6 +6,10 @@
 
 <h2>{{ title }}</h2>
 
+<a href="{% url 'budget_create' %}" class="btn">
+    + Створити бюджет
+</a>
+
 {% if budgets %}
     <table class="transactions-table">
         <thead>
