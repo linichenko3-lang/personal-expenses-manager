@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Мій профіль | Expense Tracker{% endblock %}
+
+{% block content %}
+
+<h2>Мій профіль</h2>
+
+<div class="profile-info">
+    <p>
+        <strong>Логін:</strong>
+        {{ profile_user.username }}
+    </p>
+
+    <p>
+        <strong>Email:</strong>
+        {{ profile_user.email|default:"Не вказано" }}
+    </p>
+
+    <p>
+        <strong>Дата реєстрації:</strong>
+        {{ profile_user.date_joined|date:"d.m.Y H:i" }}
+    </p>
+</div>
+
+{% endblock %}

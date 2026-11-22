@@ -7,6 +7,7 @@ from django.contrib import messages
 from .forms import ExpenseForm, IncomeForm, BudgetForm
 from .forms import RegisterForm
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
 
 # =====================================================
 # Статичні сторінки
@@ -561,5 +562,18 @@ def register(request):
     return render(
         request,
         "django_expenses/register.html",
+        context,
+    )
+
+@login_required
+def profile(request):
+    context = {
+        "title": "Мій профіль",
+        "profile_user": request.user,
+    }
+
+    return render(
+        request,
+        "django_expenses/profile.html",
         context,
     )
