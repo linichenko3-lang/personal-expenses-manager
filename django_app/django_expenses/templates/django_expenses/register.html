@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Реєстрація | Expense Tracker{% endblock %}
+
+{% block content %}
+
+<h2>Створення облікового запису</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-primary">
+        Зареєструватися
+    </button>
+</form>
+
+<p>
+    Уже маєте обліковий запис?
+    <a href="{% url 'login' %}">Увійти</a>
+</p>
+
+{% endblock %}

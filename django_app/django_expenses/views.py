@@ -5,6 +5,8 @@ from .models import Transaction, Category, Budget
 from django.utils import timezone
 from django.contrib import messages
 from .forms import ExpenseForm, IncomeForm, BudgetForm
+from .forms import RegisterForm
+from django.contrib.auth import login
 
 # =====================================================
 # Статичні сторінки
@@ -525,5 +527,33 @@ def budget_delete(request, budget_id):
     return render(
         request,
         "django_expenses/budget_confirm_delete.html",
+        context,
+    )
+
+def register(request):
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+
+            messages.success(
+                request,
+                "Реєстрація успішна! Тепер увійдіть у свій акаунт."
+            )
+
+            return redirect("login")
+
+    else:
+        form = RegisterForm()
+
+    context = {
+        "title": "Реєстрація",
+        "form": form,
+    }
+
+    return render(
+        request,
+        "django_expenses/register.html",
         context,
     )

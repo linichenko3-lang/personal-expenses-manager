@@ -1,6 +1,7 @@
 from django import forms
 from .models import Transaction, Category, Budget
-
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 class ExpenseForm(forms.ModelForm):
     """Форма для створення та редагування витрат."""
@@ -175,3 +176,29 @@ class BudgetForm(forms.ModelForm):
             )
 
         return limit
+
+
+class RegisterForm(UserCreationForm):
+    """Форма реєстрації нового користувача."""
+
+    class Meta:
+        model = User
+        fields = [
+            "username",
+            "password1",
+            "password2",
+        ]
+
+        labels = {
+            "username": "Логін",
+            "password1": "Пароль",
+            "password2": "Підтвердження пароля",
+        }
+
+        widgets = {
+            "username": forms.TextInput(
+                attrs={
+                    "placeholder": "Введіть логін",
+                }
+            ),
+        }

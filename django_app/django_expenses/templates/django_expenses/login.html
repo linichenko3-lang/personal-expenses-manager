@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Вхід | Expense Tracker{% endblock %}
+
+{% block content %}
+
+<h2>Вхід до Expense Tracker</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-primary">
+        Увійти
+    </button>
+</form>
+
+<p>
+    Ще не маєте облікового запису?
+    <a href="{% url 'register' %}">Зареєструватися</a>
+</p>
+
+{% endblock %}
