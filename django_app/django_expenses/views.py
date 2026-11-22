@@ -12,9 +12,15 @@ from django.contrib.auth import login
 # Статичні сторінки
 # =====================================================
 
+
 def home(request):
-    # Отримуємо транзакції поточного користувача
-    transactions = Transaction.objects.filter(user=request.user)
+    # Отримуємо транзакції лише авторизованого користувача
+    if request.user.is_authenticated:
+        transactions = Transaction.objects.filter(
+            user=request.user
+        )
+    else:
+        transactions = Transaction.objects.none()
 
     # Рахуємо доходи
     total_income = (
@@ -49,7 +55,7 @@ def home(request):
     return render(
         request,
         "django_expenses/home.html",
-        context
+        context,
     )
 
 

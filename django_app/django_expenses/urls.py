@@ -31,4 +31,8 @@ urlpatterns = [
     path("budgets/<int:budget_id>/edit/", views.budget_update, name="budget_update"),
     path("budgets/<int:budget_id>/delete/", views.budget_delete, name="budget_delete"),
     path("register/", views.register, name="register"),
+    path("login/", auth_views.LoginView.as_view(template_name="django_expenses/login.html"
+    ),name="login",),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout",
+    ),
 ]

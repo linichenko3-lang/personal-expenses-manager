@@ -21,6 +21,16 @@
                 <a href="{% url 'budgets_list' %}">Бюджети</a>
                 <a href="{% url 'monthly_report' %}">Звіти</a>
                 <a href="{% url 'about' %}">Про застосунок</a>
+
+                {% if user.is_authenticated %}
+                    <form method="POST" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit">Вийти</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}">Увійти</a>
+                    <a href="{% url 'register' %}">Реєстрація</a>
+                {% endif %}
             </nav>
         </div>
     </header>
@@ -31,7 +41,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2026 Expense Tracker | Керуйте своїми фінансами розумно</p>
+        <p>2026 Expense Tracker | Керуйте своїми фінансами розумно</p>
     </footer>
 
     <script src="{% static 'js/main.js' %}"></script>
