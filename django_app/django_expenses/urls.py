@@ -35,4 +35,6 @@ urlpatterns = [
     path("login/", auth_views.LoginView.as_view(template_name="django_expenses/login.html"), name="login",),
     path("logout/", auth_views.LogoutView.as_view(), name="logout",),
     path("profile/", views.profile, name="profile"),
-    ]
+    path("api/transactions/", views.TransactionListAPIView.as_view(), name="api_transactions",),
+    path("api/statistics/", views.StatisticsAPIView.as_view(), name="api_statistics",),
+      ]

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from decimal import Decimal
 from .models import Transaction, Category, Budget
 from django.utils import timezone
@@ -643,3 +643,47 @@ class TransactionListAPIView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+class StatisticsAPIView(APIView):
+    """API для отримання фінансової статистики користувача."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_transactions = Transaction.objects.filter(
+            user=request.user
+        )
+
+        income_transactions = user_transactions.filter(
+            transaction_type="income"
+        )
+
+        expense_transactions = user_transactions.filter(
+            transaction_type="expense"
+        )
+
+        total_income = (
+            income_transactions.aggregate(
+                total=Sum("amount")
+            )["total"] or Decimal("0.00")
+        )
+
+        total_expense = (
+            expense_transactions.aggregate(
+                total=Sum("amount")
+            )["total"] or Decimal("0.00")
+        )
+
+        statistics = {
+            "total_transactions": user_transactions.count(),
+            "income_count": income_transactions.count(),
+            "expense_count": expense_transactions.count(),
+            "total_income": total_income,
+            "total_expense": total_expense,
+            "balance": total_income - total_expense,
+            "budgets_count": Budget.objects.filter(
+                user=request.user
+            ).count(),
+        }
+
+        return Response(statistics)
