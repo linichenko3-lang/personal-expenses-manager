@@ -27,13 +27,12 @@ urlpatterns = [
     path("expenses/<int:transaction_id>/edit/", views.expense_update, name="expense_update"),
     path("expenses/<int:transaction_id>/delete/", views.expense_delete, name="expense_delete"),
     path("income/create/", views.income_create, name="income_create"),
+    path("api/transactions/",views.TransactionListAPIView.as_view(), name="api_transactions",),
     path("budgets/create/", views.budget_create, name="budget_create"),
     path("budgets/<int:budget_id>/edit/", views.budget_update, name="budget_update"),
     path("budgets/<int:budget_id>/delete/", views.budget_delete, name="budget_delete"),
     path("register/", views.register, name="register"),
-    path("login/", auth_views.LoginView.as_view(template_name="django_expenses/login.html"
-    ),name="login",),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout",
-    ),
+    path("login/", auth_views.LoginView.as_view(template_name="django_expenses/login.html"), name="login",),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout",),
     path("profile/", views.profile, name="profile"),
-]
+    ]
