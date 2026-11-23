@@ -16,6 +16,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import TransactionSerializer
+from drf_spectacular.utils import extend_schema
 
 # =====================================================
 # Статичні сторінки
@@ -604,6 +605,10 @@ class TransactionListAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses=TransactionSerializer(many=True),
+        description="Отримання списку транзакцій поточного користувача."
+    )
     def get(self, request):
         transactions = Transaction.objects.filter(
             user=request.user
@@ -616,6 +621,11 @@ class TransactionListAPIView(APIView):
 
         return Response(serializer.data)
 
+    @extend_schema(
+        request=TransactionSerializer,
+        responses={201: TransactionSerializer},
+        description="Створення нової транзакції."
+    )
     def post(self, request):
         serializer = TransactionSerializer(
             data=request.data
