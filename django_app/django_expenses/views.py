@@ -13,10 +13,12 @@ from django.core.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.decorators import action
 
-from .serializers import TransactionSerializer
+from .serializers import TransactionSerializer, CategorySerializer, BudgetSerializer
 from drf_spectacular.utils import extend_schema
+from rest_framework import viewsets
 
 # =====================================================
 # Статичні сторінки
@@ -687,3 +689,69 @@ class StatisticsAPIView(APIView):
         }
 
         return Response(statistics)
+
+class TransactionViewSet(viewsets.ModelViewSet):
+    """CRUD для транзакцій поточного користувача."""
+
+    serializer_class = TransactionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Transaction.objects.filter(user=self.request.user)
+
+        transaction_type = self.request.query_params.get("transaction_type")
+
+        if transaction_type in ["income", "expense"]:
+            queryset = queryset.filter(transaction_type=transaction_type)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=["get"], url_path="statistics")
+    def statistics(self, request):
+        queryset = self.get_queryset()
+
+        income = queryset.filter(
+            transaction_type="income"
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        expenses = queryset.filter(
+            transaction_type="expense"
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        balance = income - expenses
+
+        return Response({
+            "total_income": income,
+            "total_expenses": expenses,
+            "balance": balance,
+        })
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsAdminUser]
+
+        return [permission() for permission in permission_classes]
+
+
+class BudgetViewSet(viewsets.ModelViewSet):
+    """CRUD для бюджетів поточного користувача."""
+
+    serializer_class = BudgetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Budget.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+

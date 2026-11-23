@@ -4,8 +4,7 @@ from .models import Transaction
 
 
 from rest_framework import serializers
-from .models import Transaction, Category
-
+from .models import Transaction, Category, Budget
 
 class CategorySerializer(serializers.ModelSerializer):
     """Серіалізатор категорії."""
@@ -16,7 +15,6 @@ class CategorySerializer(serializers.ModelSerializer):
             "id",
             "name",
             "category_type",
-            "description",
             "icon",
         ]
 
@@ -42,4 +40,21 @@ class TransactionSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+
+class BudgetSerializer(serializers.ModelSerializer):
+    """Серіалізатор для бюджетів."""
+
+    class Meta:
+        model = Budget
+        fields = [
+            "id",
+            "category",
+            "month",
+            "year",
+            "limit",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
 
