@@ -4,7 +4,14 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 
-from .models import Budget, Category
+from .models import Budget, Category, Transaction
+
+from django.contrib.auth import get_user_model
+
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+
 
 class BudgetCRUDTests(TestCase):
 
@@ -129,4 +136,128 @@ class BudgetCRUDTests(TestCase):
 
         self.assertFalse(
             Budget.objects.filter(id=self.budget.id).exists()
+        )
+
+User = get_user_model()
+
+
+class TransactionAPITests(APITestCase):
+
+    def setUp(self):
+        # Створюємо тестового користувача
+        self.user = User.objects.create_user(
+            username="testuser",
+            password="testpassword123"
+        )
+
+        # Авторизуємо користувача
+        self.client.force_authenticate(user=self.user)
+
+        # Створюємо категорію
+        self.category = Category.objects.create(
+            name="Їжа",
+            category_type="expense"
+        )
+
+        # URL списку транзакцій
+        self.list_url = reverse("transaction-list")
+
+        # Дані для створення транзакції
+        self.transaction_data = {
+            "category": self.category.id,
+            "amount": "500.00",
+            "transaction_type": "expense",
+            "date": "2026-11-24",
+            "description": "Покупки продуктів"
+        }
+
+    def test_transaction_list_returns_200(self):
+        """Список транзакцій повертає HTTP 200."""
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_transaction_create_returns_201(self):
+        """Створення транзакції повертає HTTP 201."""
+        response = self.client.post(
+            self.list_url,
+            self.transaction_data,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Transaction.objects.count(), 1)
+
+    def test_transaction_create_without_required_field_returns_400(self):
+        """Створення без обов'язкового поля повертає HTTP 400."""
+        invalid_data = self.transaction_data.copy()
+        invalid_data.pop("amount")
+
+        response = self.client.post(
+            self.list_url,
+            invalid_data,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Transaction.objects.count(), 0)
+
+    def test_transaction_patch_changes_only_sent_field(self):
+        """PATCH змінює лише передане поле."""
+        transaction = Transaction.objects.create(
+            user=self.user,
+            category=self.category,
+            amount="500.00",
+            transaction_type="expense",
+            date="2026-11-24",
+            description="Покупки продуктів"
+        )
+
+        detail_url = reverse(
+            "transaction-detail",
+            args=[transaction.id]
+        )
+
+        response = self.client.patch(
+            detail_url,
+            {"amount": "700.00"},
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        transaction.refresh_from_db()
+
+        self.assertEqual(str(transaction.amount), "700.00")
+        self.assertEqual(transaction.description, "Покупки продуктів")
+        self.assertEqual(transaction.transaction_type, "expense")
+
+    def test_transaction_delete_returns_204_and_get_returns_404(self):
+        """DELETE повертає 204, наступний GET повертає 404."""
+        transaction = Transaction.objects.create(
+            user=self.user,
+            category=self.category,
+            amount="500.00",
+            transaction_type="expense",
+            date="2026-11-24",
+            description="Покупки продуктів"
+        )
+
+        detail_url = reverse(
+            "transaction-detail",
+            args=[transaction.id]
+        )
+
+        delete_response = self.client.delete(detail_url)
+
+        self.assertEqual(
+            delete_response.status_code,
+            status.HTTP_204_NO_CONTENT
+        )
+
+        get_response = self.client.get(detail_url)
+
+        self.assertEqual(
+            get_response.status_code,
+            status.HTTP_404_NOT_FOUND
         )
