@@ -382,7 +382,7 @@ class TransactionAPITests(APITestCase):
         called_budget = mock_webhook.call_args[0][0]
         self.assertEqual(called_budget.id, budget.id)
 
-      @patch("django_expenses.views.send_budget_exceeded_notification")
+    @patch("django_expenses.views.send_budget_exceeded_notification")
     def test_webhook_not_called_when_budget_not_exceeded(self, mock_webhook):
         """Webhook не викликається, якщо бюджет не перевищено."""
 
@@ -403,4 +403,3 @@ class TransactionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         mock_webhook.assert_not_called()
-        
