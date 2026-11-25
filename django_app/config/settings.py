@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django_expenses',
     "rest_framework",
     "drf_spectacular",
+    "django_filters"
 ]
 
 MIDDLEWARE = [
@@ -135,12 +136,27 @@ LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
 }
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "Expense Tracker API",
     "DESCRIPTION": "API для управління доходами, витратами та бюджетами",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+
 

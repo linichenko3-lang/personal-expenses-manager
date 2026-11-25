@@ -261,3 +261,95 @@ class TransactionAPITests(APITestCase):
             get_response.status_code,
             status.HTTP_404_NOT_FOUND
         )
+
+    def test_transaction_list_requires_authentication(self):
+        """Без авторизації API повертає 401."""
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+    def test_transaction_filter_by_income(self):
+        """Фільтрація повертає лише доходи."""
+        Transaction.objects.create(
+            user=self.user,
+            category=self.category,
+            amount="1000.00",
+            transaction_type="income",
+            date="2026-11-24",
+            description="Зарплата"
+        )
+
+        Transaction.objects.create(
+            user=self.user,
+            category=self.category,
+            amount="300.00",
+            transaction_type="expense",
+            date="2026-11-24",
+            description="Покупки"
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {"transaction_type": "income"}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["transaction_type"],
+            "income"
+        )
+
+    def test_user_sees_only_own_transactions(self):
+        """Користувач бачить лише власні транзакції."""
+        other_user = User.objects.create_user(
+            username="otheruser",
+            password="testpassword123"
+        )
+
+        Transaction.objects.create(
+            user=other_user,
+            category=self.category,
+            amount="900.00",
+            transaction_type="expense",
+            date="2026-11-24",
+            description="Чужа покупка"
+        )
+
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_user_cannot_retrieve_foreign_transaction(self):
+        """Користувач не може переглянути чужу транзакцію."""
+        other_user = User.objects.create_user(
+            username="otheruser",
+            password="testpassword123"
+        )
+
+        transaction = Transaction.objects.create(
+            user=other_user,
+            category=self.category,
+            amount="900.00",
+            transaction_type="expense",
+            date="2026-11-24",
+            description="Чужа покупка"
+        )
+
+        detail_url = reverse(
+            "transaction-detail",
+            args=[transaction.id]
+        )
+
+        response = self.client.get(detail_url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )

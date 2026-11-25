@@ -20,6 +20,13 @@ from .serializers import TransactionSerializer, CategorySerializer, BudgetSerial
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 
+from .permissions import IsTransactionOwner
+
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+
+
+
 # =====================================================
 # Статичні сторінки
 # =====================================================
@@ -693,8 +700,17 @@ class StatisticsAPIView(APIView):
 class TransactionViewSet(viewsets.ModelViewSet):
     """CRUD для транзакцій поточного користувача."""
 
+    filter_backends = [
+    DjangoFilterBackend,
+    SearchFilter,
+    OrderingFilter,
+]
+
     serializer_class = TransactionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTransactionOwner]
+    filterset_fields = ["transaction_type", "category"]
+    search_fields = ["category__name", "description"]
+    ordering_fields = ["date", "amount"]
 
     def get_queryset(self):
         queryset = Transaction.objects.filter(user=self.request.user)
@@ -729,6 +745,52 @@ class TransactionViewSet(viewsets.ModelViewSet):
             "balance": balance,
         })
 
+    @action(detail=False, methods=["get"], url_path="monthly-report")
+    def monthly_report(self, request):
+        year = request.query_params.get("year")
+        month = request.query_params.get("month")
+
+        if not year or not month:
+            return Response(
+                {"error": "Потрібно вказати рік і місяць."},
+                status=400
+            )
+
+        try:
+            year = int(year)
+            month = int(month)
+
+            if not 1 <= month <= 12:
+                raise ValueError
+
+        except ValueError:
+            return Response(
+                {"error": "Некоректний рік або місяць."},
+                status=400
+            )
+
+        queryset = self.get_queryset().filter(
+            date__year=year,
+            date__month=month
+        )
+
+        income = queryset.filter(
+            transaction_type="income"
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        expenses = queryset.filter(
+            transaction_type="expense"
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        balance = income - expenses
+
+        return Response({
+            "year": year,
+            "month": month,
+            "total_income": income,
+            "total_expenses": expenses,
+            "balance": balance,
+        })
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
