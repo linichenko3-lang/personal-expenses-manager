@@ -1,3 +1,4 @@
+from django.db.migrations import serializer
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Count
 from decimal import Decimal
@@ -24,7 +25,8 @@ from .permissions import IsTransactionOwner
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-
+from .models import Budget
+from .webhooks import send_budget_exceeded_notification
 
 
 # =====================================================
@@ -700,30 +702,60 @@ class StatisticsAPIView(APIView):
 class TransactionViewSet(viewsets.ModelViewSet):
     """CRUD для транзакцій поточного користувача."""
 
-    filter_backends = [
-    DjangoFilterBackend,
-    SearchFilter,
-    OrderingFilter,
-]
-
     serializer_class = TransactionSerializer
     permission_classes = [IsAuthenticated, IsTransactionOwner]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter,
+    ]
+
     filterset_fields = ["transaction_type", "category"]
     search_fields = ["category__name", "description"]
     ordering_fields = ["date", "amount"]
 
     def get_queryset(self):
-        queryset = Transaction.objects.filter(user=self.request.user)
+        queryset = Transaction.objects.filter(
+            user=self.request.user
+        )
 
-        transaction_type = self.request.query_params.get("transaction_type")
+        transaction_type = self.request.query_params.get(
+            "transaction_type"
+        )
 
         if transaction_type in ["income", "expense"]:
-            queryset = queryset.filter(transaction_type=transaction_type)
+            queryset = queryset.filter(
+                transaction_type=transaction_type
+            )
 
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        transaction = serializer.save(
+            user=self.request.user
+        )
+
+        if (
+            transaction.transaction_type != "expense"
+            or transaction.category is None
+        ):
+            return
+
+        budget = Budget.objects.filter(
+            user=self.request.user,
+            category=transaction.category,
+            month=transaction.date.month,
+            year=transaction.date.year,
+        ).first()
+
+        if budget is None:
+            return
+
+        spent_before = budget.get_spent() - transaction.amount
+
+        if spent_before <= budget.limit and budget.is_exceeded():
+            send_budget_exceeded_notification(budget)
 
     @action(detail=False, methods=["get"], url_path="statistics")
     def statistics(self, request):
@@ -731,11 +763,15 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         income = queryset.filter(
             transaction_type="income"
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        ).aggregate(
+            total=Sum("amount")
+        )["total"] or Decimal("0.00")
 
         expenses = queryset.filter(
             transaction_type="expense"
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        ).aggregate(
+            total=Sum("amount")
+        )["total"] or Decimal("0.00")
 
         balance = income - expenses
 
@@ -776,11 +812,15 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         income = queryset.filter(
             transaction_type="income"
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        ).aggregate(
+            total=Sum("amount")
+        )["total"] or Decimal("0.00")
 
         expenses = queryset.filter(
             transaction_type="expense"
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        ).aggregate(
+            total=Sum("amount")
+        )["total"] or Decimal("0.00")
 
         balance = income - expenses
 
@@ -791,6 +831,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
             "total_expenses": expenses,
             "balance": balance,
         })
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -816,4 +857,5 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 

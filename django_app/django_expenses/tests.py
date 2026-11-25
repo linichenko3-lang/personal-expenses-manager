@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import status
 from rest_framework.test import APITestCase
-
+from unittest.mock import patch
 
 
 class BudgetCRUDTests(TestCase):
@@ -353,3 +353,31 @@ class TransactionAPITests(APITestCase):
             response.status_code,
             status.HTTP_404_NOT_FOUND
         )
+
+    @patch("django_expenses.views.send_budget_exceeded_notification")
+    def test_webhook_called_when_budget_exceeded(self, mock_webhook):
+        """Webhook викликається, коли витрати перевищують бюджет."""
+
+        budget = Budget.objects.create(
+            user=self.user,
+            category=self.category,
+            month=11,
+            year=2026,
+            limit=Decimal("1000.00"),
+        )
+
+        transaction_data = self.transaction_data.copy()
+        transaction_data["amount"] = "1200.00"
+
+        response = self.client.post(
+            self.list_url,
+            transaction_data,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        mock_webhook.assert_called_once()
+
+        called_budget = mock_webhook.call_args[0][0]
+        self.assertEqual(called_budget.id, budget.id)

@@ -158,5 +158,6 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
+BUDGET_WEBHOOK_URL = "http://127.0.0.1:9000/webhook/"
 
 
