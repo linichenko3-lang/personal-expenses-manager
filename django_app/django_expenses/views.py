@@ -17,7 +17,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.decorators import action
 
-from .serializers import TransactionSerializer, CategorySerializer, BudgetSerializer
+from .serializers import TransactionSerializer, CategorySerializer, BudgetSerializer, StatisticsSerializer
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 
@@ -659,7 +659,8 @@ class StatisticsAPIView(APIView):
     """API для отримання фінансової статистики користувача."""
 
     permission_classes = [IsAuthenticated]
-
+    
+    @extend_schema(responses=StatisticsSerializer)
     def get(self, request):
         user_transactions = Transaction.objects.filter(
             user=request.user
@@ -704,7 +705,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     serializer_class = TransactionSerializer
     permission_classes = [IsAuthenticated, IsTransactionOwner]
-
+    lookup_value_converter = "int"
+    
     filter_backends = [
         DjangoFilterBackend,
         SearchFilter,
@@ -716,9 +718,11 @@ class TransactionViewSet(viewsets.ModelViewSet):
     ordering_fields = ["date", "amount"]
 
     def get_queryset(self):
-        queryset = Transaction.objects.filter(
-            user=self.request.user
-        )
+        if getattr(self, "swagger_fake_view", False):
+            return Transaction.objects.none()
+
+        queryset = Transaction.objects.filter(user=self.request.user)
+        
 
         transaction_type = self.request.query_params.get(
             "transaction_type"
@@ -836,6 +840,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    lookup_value_converter = "int"
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -851,8 +856,12 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
     serializer_class = BudgetSerializer
     permission_classes = [IsAuthenticated]
+    lookup_value_converter = "int"
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Budget.objects.none()
+
         return Budget.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):

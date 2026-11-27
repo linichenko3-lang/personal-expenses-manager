@@ -57,4 +57,21 @@ class BudgetSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at"]
 
+class StatisticsSerializer(serializers.Serializer):
+    total_transactions = serializers.IntegerField()
+    income_count = serializers.IntegerField()
+    expense_count = serializers.IntegerField()
+    total_income = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+    total_expense = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+    balance = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+    budgets_count = serializers.IntegerField()
 
